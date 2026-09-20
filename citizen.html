@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citizen Portal — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Citizen Top Bar -->
+  <header class="border-b border-slate-800 bg-[#0d1424] px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <div class="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center text-white text-lg">
+          <i class="fa-solid fa-truck-medical"></i>
+        </div>
+        <span class="text-xl font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <span class="hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-900/40 text-blue-400 border border-blue-700/50">CITIZEN PORTAL</span>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <div class="text-right hidden sm:block">
+        <div class="text-xs font-bold text-white" id="user-display-name">Aarav Patel</div>
+        <div class="text-[10px] text-slate-400">Citizen Reporter</div>
+      </div>
+      <button onclick="openEmergencyModal()" class="btn-emergency px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+        <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
+        <span>REPORT EMERGENCY</span>
+      </button>
+      <button onclick="API.logout()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition text-xs">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Welcome Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
+          <span>Good Evening</span>
+          <span class="text-base font-normal text-slate-400">| Welcome to JeevanSetu</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">Direct emergency reporting corridor with algorithmic responder dispatch and live tracking.</p>
+      </div>
+      <button onclick="openEmergencyModal()" class="btn-emergency py-3.5 px-6 rounded-xl text-sm font-bold flex items-center justify-center gap-2.5 shadow-lg shadow-red-600/30">
+        <i class="fa-solid fa-circle-radiation text-base"></i>
+        <span>🚨 GET IMMEDIATE EMERGENCY HELP</span>
+      </button>
+    </div>
+
+    <!-- Quick Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="panel-card p-5 border-l-4 border-l-red-500">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold text-slate-400 uppercase">Active Emergencies</div>
+          <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+        </div>
+        <div class="text-2xl font-bold text-white mt-2 mono" id="stat-active">1</div>
+        <div class="text-[11px] text-red-400 font-medium mt-1">Under command dispatch</div>
+      </div>
+
+      <div class="panel-card p-5 border-l-4 border-l-blue-500">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold text-slate-400 uppercase">Report History</div>
+          <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-white mt-2 mono" id="stat-history">3</div>
+        <div class="text-[11px] text-slate-400 mt-1">All resolved incidents logged</div>
+      </div>
+
+      <div class="panel-card p-5 border-l-4 border-l-emerald-500">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold text-slate-400 uppercase">Nearby Hospitals</div>
+          <i class="fa-solid fa-hospital text-emerald-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-emerald-400 mt-2 mono">3 Available</div>
+        <div class="text-[11px] text-slate-400 mt-1">Within 5 km radius (14 ICU beds)</div>
+      </div>
+
+      <div class="panel-card p-5 border-l-4 border-l-amber-500">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold text-slate-400 uppercase">Nearest Responder</div>
+          <i class="fa-solid fa-location-arrow text-amber-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-amber-400 mt-2 mono">1.8 km</div>
+        <div class="text-[11px] text-slate-400 mt-1">AMB-104 (ALS Trauma Unit)</div>
+      </div>
+    </div>
+
+    <!-- Active Incidents Tracking -->
+    <section class="panel-card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-satellite-dish text-red-500 animate-pulse"></i>
+          <span>My Live Emergency Incidents</span>
+        </h2>
+        <span class="text-xs text-slate-400">Real-time status updates</span>
+      </div>
+
+      <div id="active-incidents-container" class="space-y-4">
+        <!-- Loaded via JavaScript -->
+      </div>
+    </section>
+
+    <!-- Local Emergency Directory -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Nearby Hospitals -->
+      <section class="panel-card p-6">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-hospital text-emerald-400"></i>
+          <span>Nearest Trauma & Hospital Centers</span>
+        </h3>
+        <div class="space-y-3" id="hospitals-list">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Nearby Blood Banks & Helpline -->
+      <section class="panel-card p-6 flex flex-col justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-phone-volume text-red-400"></i>
+            <span>Verified 24/7 Helplines</span>
+          </h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700/60">
+              <div class="text-xs text-slate-400">National Emergency</div>
+              <div class="text-lg font-bold text-red-400 mono">112</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700/60">
+              <div class="text-xs text-slate-400">Ambulance Service</div>
+              <div class="text-lg font-bold text-emerald-400 mono">108</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700/60">
+              <div class="text-xs text-slate-400">Fire & Rescue</div>
+              <div class="text-lg font-bold text-orange-400 mono">101</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-700/60">
+              <div class="text-xs text-slate-400">Blood Emergency Net</div>
+              <div class="text-lg font-bold text-rose-400 mono">104</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-800">
+          <div class="text-xs font-semibold text-slate-300 mb-2">Need rare blood units?</div>
+          <a href="bloodbank.html" class="w-full py-2.5 rounded-lg bg-red-900/30 hover:bg-red-900/50 border border-red-500/40 text-red-300 font-bold text-xs flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-droplet"></i>
+            <span>Search Emergency Blood Supply</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Multi-Step Emergency Reporting Modal -->
+  <div id="emergency-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="panel-card w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden bg-[#0d1424] border-red-500/50 shadow-2xl">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+          <h2 class="text-base font-bold text-white tracking-wide">Report Emergency Incident</h2>
+        </div>
+        <button onclick="closeEmergencyModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Step Progress Bar -->
+      <div class="grid grid-cols-4 border-b border-slate-800 text-[11px] font-bold text-center mono">
+        <div id="step-tab-1" class="py-2.5 bg-red-950/60 text-red-400 border-b-2 border-red-500">1. TYPE</div>
+        <div id="step-tab-2" class="py-2.5 text-slate-500">2. LOCATION</div>
+        <div id="step-tab-3" class="py-2.5 text-slate-500">3. TRIAGE</div>
+        <div id="step-tab-4" class="py-2.5 text-slate-500">4. SUBMIT</div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto flex-1">
+        <!-- STEP 1: Emergency Type -->
+        <div id="step-1" class="space-y-4">
+          <p class="text-xs text-slate-300 font-medium">Select the primary emergency classification:</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button onclick="selectCategory('ACCIDENT', '🚗 Road Accident')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🚗</div>
+              <div class="text-xs font-bold text-white">Road Accident</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Collisions & crashes</div>
+            </button>
+            <button onclick="selectCategory('MEDICAL', '🚑 Medical Emergency')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🚑</div>
+              <div class="text-xs font-bold text-white">Medical Emergency</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Cardiac, trauma, stroke</div>
+            </button>
+            <button onclick="selectCategory('FIRE', '🔥 Fire Incident')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🔥</div>
+              <div class="text-xs font-bold text-white">Fire Incident</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Blazes & gas leaks</div>
+            </button>
+            <button onclick="selectCategory('POLICE', '🚔 Police Emergency')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🚔</div>
+              <div class="text-xs font-bold text-white">Police Emergency</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Security & threats</div>
+            </button>
+            <button onclick="selectCategory('RESCUE', '🆘 Rescue Operation')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🆘</div>
+              <div class="text-xs font-bold text-white">Rescue</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Trapped or confined</div>
+            </button>
+            <button onclick="selectCategory('BUILDING_COLLAPSE', '🏚 Building Collapse')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🏚</div>
+              <div class="text-xs font-bold text-white">Building Collapse</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Structural failure</div>
+            </button>
+            <button onclick="selectCategory('BLOOD_EMERGENCY', '🩸 Blood Emergency')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🩸</div>
+              <div class="text-xs font-bold text-white">Blood Emergency</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Urgent transfusion</div>
+            </button>
+            <button onclick="selectCategory('FLOOD', '🌊 Flood Relief')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">🌊</div>
+              <div class="text-xs font-bold text-white">Flood Relief</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Submerged zones</div>
+            </button>
+            <button onclick="selectCategory('OTHER', '⚠ Other Emergency')" class="cat-card p-4 rounded-xl border border-slate-700 bg-slate-900 hover:border-red-500 hover:bg-slate-800 text-left transition">
+              <div class="text-2xl mb-1">⚠</div>
+              <div class="text-xs font-bold text-white">Other Emergency</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">General critical need</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Location -->
+        <div id="step-2" class="hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-slate-300 font-medium">Pinpoint incident location:</p>
+            <button type="button" onclick="useCurrentLocation()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-crosshairs"></i>
+              <span>Use My Current Location</span>
+            </button>
+          </div>
+
+          <!-- Leaflet Interactive Map -->
+          <div id="report-map" class="w-full h-56 rounded-xl border border-slate-700"></div>
+
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1">Latitude</label>
+              <input type="text" id="report-lat" readonly class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-slate-200 mono">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Longitude</label>
+              <input type="text" id="report-lng" readonly class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-slate-200 mono">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-400 text-xs mb-1">Street Address / Landmark</label>
+            <input type="text" id="report-address" value="MG Road Junction near Metro Pillar 140, Metro City" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+          </div>
+        </div>
+
+        <!-- STEP 3: Triage Details -->
+        <div id="step-3" class="hidden space-y-4">
+          <p class="text-xs text-slate-300 font-medium">Trauma triage conditions (Evaluated by Java Priority Engine):</p>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">People Affected</label>
+              <input type="number" id="people-affected" min="1" value="3" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Injured Casualties</label>
+              <input type="number" id="injured-count" min="0" value="2" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white text-sm">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer hover:border-slate-700">
+              <input type="checkbox" id="check-unconscious" checked class="rounded bg-slate-800 border-slate-600 text-red-500 focus:ring-0">
+              <span class="text-xs text-red-400 font-bold">Unconscious Victim(s)</span>
+            </label>
+            <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer hover:border-slate-700">
+              <input type="checkbox" id="check-bleeding" checked class="rounded bg-slate-800 border-slate-600 text-red-500 focus:ring-0">
+              <span class="text-xs text-red-400 font-bold">Severe Bleeding</span>
+            </label>
+            <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer hover:border-slate-700">
+              <input type="checkbox" id="check-trapped" checked class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0">
+              <span class="text-xs text-amber-400 font-bold">Victim(s) Trapped</span>
+            </label>
+            <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer hover:border-slate-700">
+              <input type="checkbox" id="check-fire" class="rounded bg-slate-800 border-slate-600 text-orange-500 focus:ring-0">
+              <span class="text-xs text-orange-400 font-bold">Active Fire Present</span>
+            </label>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Description / Observations</label>
+            <textarea id="report-desc" rows="3" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-blue-500" placeholder="Describe the scene, vehicle types, or patient condition...">Two-vehicle collision with passenger trapped in rear seat. Severe bleeding observed and one passenger unresponsive.</textarea>
+          </div>
+        </div>
+
+        <!-- STEP 4: Review & Live Confirmation -->
+        <div id="step-4" class="hidden space-y-4">
+          <div id="review-pre-submit" class="space-y-3 text-xs">
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Emergency Type:</span>
+              <span class="font-bold text-white text-sm" id="rev-type">Road Accident</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Location:</span>
+              <span class="font-bold text-white" id="rev-address">MG Road Junction</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Casualties:</span>
+              <span class="font-bold text-red-400" id="rev-casualties">2 Injured, 1 Unconscious</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">Triage Rating:</span>
+              <span class="px-2 py-0.5 rounded text-xs font-bold badge-critical">CRITICAL (Calculated)</span>
+            </div>
+          </div>
+
+          <!-- Post-submission result card -->
+          <div id="submit-result-card" class="hidden p-5 rounded-xl bg-emerald-950/40 border border-emerald-500/50 text-center space-y-3">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl mx-auto">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Emergency Reported Successfully</h3>
+            <div class="p-3 rounded bg-slate-900 border border-slate-800 max-w-xs mx-auto text-left space-y-1">
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">Incident ID:</div>
+              <div class="text-base font-bold text-emerald-400 mono" id="res-incident-id">JS-2026-000184</div>
+              <div class="text-[10px] text-slate-400 uppercase font-semibold mt-2">Priority:</div>
+              <div class="text-xs font-bold text-red-400 mono" id="res-priority">CRITICAL</div>
+              <div class="text-[10px] text-slate-400 uppercase font-semibold mt-2">Status:</div>
+              <div class="text-xs font-bold text-blue-400 mono" id="res-status">PROCESSING REQUEST</div>
+            </div>
+            <p class="text-xs text-slate-300">Command operations has dispatched nearest responder unit. Real-time updates streaming below.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Controls -->
+      <div class="px-6 py-4 border-t border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <button type="button" id="btn-prev" onclick="prevStep()" class="btn-secondary px-4 py-2 rounded-lg text-xs font-semibold hidden">
+          Back
+        </button>
+        <div class="ml-auto flex items-center gap-3">
+          <button type="button" id="btn-next" onclick="nextStep()" class="btn-primary px-5 py-2 rounded-lg text-xs font-bold">
+            Continue to Location
+          </button>
+          <button type="button" id="btn-submit" onclick="submitEmergency()" class="btn-emergency px-6 py-2.5 rounded-lg text-xs font-bold hidden">
+            <span>🚨 SEND EMERGENCY</span>
+          </button>
+          <button type="button" id="btn-done" onclick="closeEmergencyModal()" class="btn-primary px-6 py-2 rounded-lg text-xs font-bold hidden">
+            Close & Track Incident
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let currentStep = 1;
+    let selectedCat = 'ACCIDENT';
+    let selectedCatName = 'Road Accident';
+    let map = null;
+    let marker = null;
+    const defaultLat = 12.9716, defaultLng = 77.5946;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const auth = API.getAuth();
+      if (auth.fullName) {
+        document.getElementById('user-display-name').innerText = auth.fullName;
+      }
+      loadActiveIncidents();
+      loadNearbyHospitals();
+
+      // Check URL params for pre-selected type
+      const params = new URLSearchParams(window.location.search);
+      const urlType = params.get('type');
+      if (urlType) {
+        openEmergencyModal();
+        selectCategory(urlType, urlType);
+      }
+    });
+
+    function openEmergencyModal() {
+      document.getElementById('emergency-modal').classList.remove('hidden');
+      goToStep(1);
+    }
+
+    function closeEmergencyModal() {
+      document.getElementById('emergency-modal').classList.add('hidden');
+      loadActiveIncidents();
+    }
+
+    function goToStep(step) {
+      currentStep = step;
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`step-${i}`).classList.add('hidden');
+        const tab = document.getElementById(`step-tab-${i}`);
+        tab.className = i === step
+          ? 'py-2.5 bg-red-950/60 text-red-400 border-b-2 border-red-500'
+          : 'py-2.5 text-slate-500';
+      }
+      document.getElementById(`step-${step}`).classList.remove('hidden');
+
+      document.getElementById('btn-prev').classList.toggle('hidden', step === 1 || step === 4);
+      document.getElementById('btn-next').classList.toggle('hidden', step >= 3);
+      document.getElementById('btn-submit').classList.toggle('hidden', step !== 3);
+
+      if (step === 2) {
+        setTimeout(initReportMap, 200);
+      }
+      if (step === 3) {
+        document.getElementById('btn-submit').classList.remove('hidden');
+      }
+    }
+
+    function nextStep() {
+      if (currentStep === 1) {
+        goToStep(2);
+      } else if (currentStep === 2) {
+        goToStep(3);
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) goToStep(currentStep - 1);
+    }
+
+    function selectCategory(cat, name) {
+      selectedCat = cat;
+      selectedCatName = name;
+      goToStep(2);
+    }
+
+    function initReportMap() {
+      if (!map) {
+        map = L.map('report-map').setView([defaultLat, defaultLng], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+        marker.on('dragend', function (e) {
+          const pos = e.target.getLatLng();
+          updateCoordinates(pos.lat, pos.lng);
+        });
+
+        map.on('click', function (e) {
+          marker.setLatLng(e.latlng);
+          updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+
+        updateCoordinates(defaultLat, defaultLng);
+      } else {
+        map.invalidateSize();
+      }
+    }
+
+    function updateCoordinates(lat, lng) {
+      document.getElementById('report-lat').value = lat.toFixed(5);
+      document.getElementById('report-lng').value = lng.toFixed(5);
+    }
+
+    function useCurrentLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          if (map && marker) {
+            map.setView([lat, lng], 15);
+            marker.setLatLng([lat, lng]);
+            updateCoordinates(lat, lng);
+          }
+        }, () => {
+          alert('GPS permission not granted. Selected default central coordinate.');
+        });
+      }
+    }
+
+    async function submitEmergency() {
+      goToStep(4);
+      document.getElementById('rev-type').innerText = selectedCatName;
+      document.getElementById('rev-address').innerText = document.getElementById('report-address').value;
+      const inj = document.getElementById('injured-count').value;
+      const unc = document.getElementById('check-unconscious').checked;
+      document.getElementById('rev-casualties').innerText = `${inj} Injured, ${unc ? 'Unconscious' : 'Conscious'}`;
+
+      const data = {
+        type: selectedCat,
+        description: document.getElementById('report-desc').value,
+        latitude: parseFloat(document.getElementById('report-lat').value) || defaultLat,
+        longitude: parseFloat(document.getElementById('report-lng').value) || defaultLng,
+        address: document.getElementById('report-address').value,
+        peopleAffected: parseInt(document.getElementById('people-affected').value) || 1,
+        injuredCount: parseInt(inj) || 0,
+        unconscious: unc,
+        severeBleeding: document.getElementById('check-bleeding').checked,
+        trapped: document.getElementById('check-trapped').checked,
+        fireInvolved: document.getElementById('check-fire').checked
+      };
+
+      try {
+        const result = await API.request('/emergencies/report', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        document.getElementById('review-pre-submit').classList.add('hidden');
+        document.getElementById('submit-result-card').classList.remove('hidden');
+        document.getElementById('res-incident-id').innerText = result.incidentCode || 'JS-2026-000184';
+        document.getElementById('res-priority').innerText = result.priority || 'CRITICAL';
+        document.getElementById('res-status').innerText = result.status || 'PROCESSING REQUEST';
+        document.getElementById('btn-done').classList.remove('hidden');
+        document.getElementById('btn-prev').classList.add('hidden');
+        document.getElementById('btn-submit').classList.add('hidden');
+      } catch (err) {
+        alert('Report submission error: ' + err.message);
+      }
+    }
+
+    async function loadActiveIncidents() {
+      const cont = document.getElementById('active-incidents-container');
+      try {
+        const list = await API.request('/emergencies/priority-queue');
+        if (!list || list.length === 0) {
+          cont.innerHTML = `<div class="text-xs text-slate-500 py-4 text-center">No active emergencies reported. Grid status normal.</div>`;
+          return;
+        }
+
+        document.getElementById('stat-active').innerText = list.length;
+
+        cont.innerHTML = list.map(item => `
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-white mono">${item.incidentCode}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.priority === 'CRITICAL' ? 'badge-critical' : 'badge-high'}">${item.priority}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold badge-assigned">${item.status}</span>
+              </div>
+              <div class="text-xs text-slate-300 font-medium">${item.type} • ${item.address}</div>
+              <div class="text-[11px] text-slate-400">${item.description}</div>
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <a href="incident-detail.html?id=${item.id || item.incidentCode}" class="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/40 text-xs font-semibold flex items-center gap-1">
+                <span>View Timeline</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadNearbyHospitals() {
+      const container = document.getElementById('hospitals-list');
+      try {
+        const hospitals = await API.request('/hospitals');
+        container.innerHTML = (hospitals || []).slice(0, 3).map(h => `
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-white">${h.name}</div>
+              <div class="text-[10px] text-slate-400">${h.address}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-bold text-emerald-400 mono">${h.icuBeds - h.occupiedIcuBeds} ICU Avail</div>
+              <div class="text-[10px] text-slate-500">${h.emergencyBeds - h.occupiedEmergencyBeds} ER Beds</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>

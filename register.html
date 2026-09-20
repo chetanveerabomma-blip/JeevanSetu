@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Account — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+
+  <div class="max-w-xl w-full mx-auto">
+    <!-- Header Logo -->
+    <div class="text-center mb-8">
+      <a href="index.html" class="inline-flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-xl shadow-lg shadow-red-600/30">
+          <i class="fa-solid fa-truck-medical"></i>
+        </div>
+        <span class="text-2xl font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <h2 class="text-2xl font-bold text-white mt-4">Create Verified Emergency Account</h2>
+      <p class="text-xs text-slate-400 mt-1">Select your role to configure appropriate permissions</p>
+    </div>
+
+    <!-- Registration Card -->
+    <div class="panel-card p-6 sm:p-8">
+      <!-- Role Selector Tabs -->
+      <div class="mb-6">
+        <label class="block text-xs font-semibold text-slate-300 uppercase mb-2">Account Type</label>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="role-selector">
+          <button type="button" onclick="selectRole('CITIZEN')" class="role-btn p-2.5 rounded-lg border border-blue-500 bg-blue-900/30 text-xs font-bold text-blue-400 text-center transition">
+            <i class="fa-solid fa-user block text-base mb-1"></i> Citizen
+          </button>
+          <button type="button" onclick="selectRole('RESPONDER')" class="role-btn p-2.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-bold text-slate-300 hover:border-slate-500 text-center transition">
+            <i class="fa-solid fa-truck-medical block text-base mb-1"></i> Responder
+          </button>
+          <button type="button" onclick="selectRole('HOSPITAL')" class="role-btn p-2.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-bold text-slate-300 hover:border-slate-500 text-center transition">
+            <i class="fa-solid fa-hospital block text-base mb-1"></i> Hospital
+          </button>
+          <button type="button" onclick="selectRole('BLOOD_BANK')" class="role-btn p-2.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-bold text-slate-300 hover:border-slate-500 text-center transition">
+            <i class="fa-solid fa-droplet block text-base mb-1"></i> Blood Bank
+          </button>
+          <button type="button" onclick="selectRole('VOLUNTEER')" class="role-btn p-2.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-bold text-slate-300 hover:border-slate-500 text-center transition">
+            <i class="fa-solid fa-hand-holding-heart block text-base mb-1"></i> Volunteer
+          </button>
+        </div>
+      </div>
+
+      <form id="reg-form" onsubmit="handleRegister(event)" class="space-y-4">
+        <!-- Common: Name / Org -->
+        <div>
+          <label id="lbl-name" class="block text-xs font-semibold text-slate-300 uppercase mb-1">Full Name</label>
+          <input type="text" id="fullName" required class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500">
+        </div>
+
+        <!-- Common: Email & Phone -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Email Address</label>
+            <input type="email" id="email" required class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Emergency Phone</label>
+            <input type="tel" id="phone" required class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <!-- Common: Password -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Password</label>
+          <input type="password" id="password" required minlength="6" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500">
+        </div>
+
+        <!-- Role-Specific Fields Container -->
+        <div id="dynamic-fields" class="space-y-4">
+          <!-- Citizen Fields (Default) -->
+          <div id="citizen-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">City / Region</label>
+              <input type="text" id="city" value="Metro Central" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Kin Emergency Contact</label>
+              <input type="tel" id="emergencyContact" placeholder="e.g. 9810012345" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Responder Fields -->
+          <div id="responder-fields" class="hidden space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Service Branch</label>
+                <select id="unitType" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+                  <option value="AMBULANCE">Ambulance (Emergency Medical)</option>
+                  <option value="POLICE">Police Interceptor</option>
+                  <option value="FIRE">Fire & Rescue Tender</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Unit / Vehicle ID</label>
+                <input type="text" id="unitId" placeholder="e.g. AMB-104" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Organization / Department</label>
+              <input type="text" id="organization" placeholder="e.g. National Health Emergency Service" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Hospital / Blood Bank Fields -->
+          <div id="hospital-fields" class="hidden space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Govt Registration ID</label>
+                <input type="text" id="registrationId" placeholder="e.g. HOSP-REG-4029" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Facility Address</label>
+                <input type="text" id="address" placeholder="Hospital / Blood Bank Street Address" class="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary w-full py-3.5 rounded-lg text-sm font-bold tracking-wide mt-6">
+          CREATE ACCOUNT & CONTINUE
+        </button>
+      </form>
+
+      <div id="reg-error" class="hidden mt-3 p-3 rounded bg-red-950/80 border border-red-500/50 text-red-200 text-xs text-center"></div>
+
+      <div class="mt-6 text-center text-xs text-slate-400">
+        Already have an account?
+        <a href="login.html" class="text-blue-400 font-semibold hover:underline">Log in</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let activeRole = 'CITIZEN';
+
+    function selectRole(role) {
+      activeRole = role;
+      document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.remove('border-blue-500', 'bg-blue-900/30', 'text-blue-400');
+        btn.classList.add('border-slate-700', 'bg-slate-900', 'text-slate-300');
+      });
+      event.currentTarget.classList.add('border-blue-500', 'bg-blue-900/30', 'text-blue-400');
+      event.currentTarget.classList.remove('border-slate-700', 'bg-slate-900', 'text-slate-300');
+
+      const citizenFields = document.getElementById('citizen-fields');
+      const responderFields = document.getElementById('responder-fields');
+      const hospitalFields = document.getElementById('hospital-fields');
+      const lblName = document.getElementById('lbl-name');
+
+      citizenFields.classList.add('hidden');
+      responderFields.classList.add('hidden');
+      hospitalFields.classList.add('hidden');
+
+      if (role === 'CITIZEN') {
+        citizenFields.classList.remove('hidden');
+        lblName.innerText = 'Full Name';
+      } else if (role === 'RESPONDER') {
+        responderFields.classList.remove('hidden');
+        lblName.innerText = 'Officer / Pilot In-Charge Name';
+      } else if (role === 'HOSPITAL' || role === 'BLOOD_BANK') {
+        hospitalFields.classList.remove('hidden');
+        lblName.innerText = role === 'HOSPITAL' ? 'Hospital Name' : 'Blood Bank Name';
+      } else if (role === 'VOLUNTEER') {
+        citizenFields.classList.remove('hidden');
+        lblName.innerText = 'Volunteer Full Name';
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('reg-error');
+      errBox.classList.add('hidden');
+
+      const data = {
+        fullName: document.getElementById('fullName').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        password: document.getElementById('password').value,
+        role: activeRole === 'RESPONDER' ? document.getElementById('unitType').value : activeRole,
+        city: document.getElementById('city') ? document.getElementById('city').value : null,
+        emergencyContact: document.getElementById('emergencyContact') ? document.getElementById('emergencyContact').value : null,
+        unitId: document.getElementById('unitId') ? document.getElementById('unitId').value : null,
+        organization: document.getElementById('organization') ? document.getElementById('organization').value : null,
+        registrationId: document.getElementById('registrationId') ? document.getElementById('registrationId').value : null,
+        address: document.getElementById('address') ? document.getElementById('address').value : null
+      };
+
+      try {
+        const auth = await API.request('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        API.setAuth(auth);
+        alert('Account successfully registered!');
+        window.location.href = activeRole === 'CITIZEN' ? 'citizen.html' : 'login.html';
+      } catch (err) {
+        errBox.innerText = err.message || 'Registration failed.';
+        errBox.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

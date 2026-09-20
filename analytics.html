@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics & Emergency Heatmap — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-[#0d1424] px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl">
+        <i class="fa-solid fa-chart-line"></i>
+      </div>
+      <div>
+        <div class="text-base font-extrabold text-white">Emergency Analytics & Density Heatmap</div>
+        <div class="text-[11px] text-slate-400">Statistical Analysis & Incident Geospatial Telemetry</div>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <a href="command-center.html" class="px-3.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+        Command Grid
+      </a>
+      <button onclick="API.logout()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Top KPI Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="panel-card p-4 text-center">
+        <div class="text-[10px] uppercase font-bold text-slate-400">Total Incidents</div>
+        <div class="text-2xl font-black text-white mt-1 mono" id="kpi-total">33</div>
+      </div>
+      <div class="panel-card p-4 text-center">
+        <div class="text-[10px] uppercase font-bold text-slate-400">Resolved</div>
+        <div class="text-2xl font-black text-emerald-400 mt-1 mono" id="kpi-resolved">28</div>
+      </div>
+      <div class="panel-card p-4 text-center">
+        <div class="text-[10px] uppercase font-bold text-slate-400">Active Live</div>
+        <div class="text-2xl font-black text-red-400 mt-1 mono" id="kpi-active">5</div>
+      </div>
+      <div class="panel-card p-4 text-center">
+        <div class="text-[10px] uppercase font-bold text-slate-400">Avg Response</div>
+        <div class="text-2xl font-black text-amber-400 mt-1 mono">7.2 <span class="text-xs">min</span></div>
+      </div>
+      <div class="panel-card p-4 text-center">
+        <div class="text-[10px] uppercase font-bold text-slate-400">Avg Dispatch</div>
+        <div class="text-2xl font-black text-sky-400 mt-1 mono">1.6 <span class="text-xs">min</span></div>
+      </div>
+      <div class="panel-card p-4 text-center">
+        <div class="text-[10px] uppercase font-bold text-slate-400">Fleet Utilization</div>
+        <div class="text-2xl font-black text-purple-400 mt-1 mono">78.4%</div>
+      </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Chart 1: Incidents by Category -->
+      <div class="panel-card p-5 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Emergencies by Category</h3>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="chart-categories"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Priority Distribution -->
+      <div class="panel-card p-5 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Triage Priority Distribution</h3>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="chart-priorities"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Response Time Curves -->
+      <div class="panel-card p-5 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Hourly Response Time Trend (Minutes)</h3>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="chart-trends"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 4: Blood & Hospital Readiness -->
+      <div class="panel-card p-5 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Blood Bank Inventory Supply (Units)</h3>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="chart-blood"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Geospatial Density Heatmap -->
+    <div class="panel-card p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-fire text-orange-400"></i>
+          <span>Metropolitan Emergency Density & Hotspot Heatmap</span>
+        </h2>
+        <span class="text-xs text-slate-400 mono">Red = High Critical Density</span>
+      </div>
+      <div id="heatmap" class="w-full h-96 rounded-xl border border-slate-700"></div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      initCharts();
+      initHeatmap();
+    });
+
+    function initCharts() {
+      // 1. Categories Bar Chart
+      new Chart(document.getElementById('chart-categories'), {
+        type: 'bar',
+        data: {
+          labels: ['Accident', 'Medical', 'Fire', 'Police', 'Rescue', 'Collapse', 'Blood', 'Flood'],
+          datasets: [{
+            label: 'Incidents',
+            data: [12, 8, 5, 4, 3, 2, 4, 2],
+            backgroundColor: ['#ef4444', '#0284c7', '#ea580c', '#4f46e5', '#7c3aed', '#d97706', '#be123c', '#06b6d4'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+
+      // 2. Priorities Doughnut
+      new Chart(document.getElementById('chart-priorities'), {
+        type: 'doughnut',
+        data: {
+          labels: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+          datasets: [{
+            data: [14, 10, 6, 3],
+            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { color: '#cbd5e1', boxWidth: 12 } }
+          }
+        }
+      });
+
+      // 3. Response Time Trend Line
+      new Chart(document.getElementById('chart-trends'), {
+        type: 'line',
+        data: {
+          labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+          datasets: [{
+            label: 'Response Time (mins)',
+            data: [5.8, 5.2, 8.4, 7.6, 9.1, 7.2],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+
+      // 4. Blood Stock
+      new Chart(document.getElementById('chart-blood'), {
+        type: 'bar',
+        data: {
+          labels: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
+          datasets: [{
+            label: 'Units Available',
+            data: [52, 18, 64, 14, 75, 10, 32, 8],
+            backgroundColor: '#be123c',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+    }
+
+    function initHeatmap() {
+      const hMap = L.map('heatmap').setView([12.9716, 77.5946], 13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(hMap);
+
+      // Render hot spots as radiating density circles
+      const points = [
+        [12.9716, 77.5946, 300, '#ef4444'],
+        [12.9780, 77.5910, 250, '#f97316'],
+        [12.9650, 77.5850, 200, '#ef4444'],
+        [12.9820, 77.6050, 220, '#eab308'],
+        [12.9600, 77.6020, 280, '#ef4444']
+      ];
+
+      points.forEach(p => {
+        L.circle([p[0], p[1]], {
+          color: p[3],
+          fillColor: p[3],
+          fillOpacity: 0.35,
+          radius: p[2]
+        }).addTo(hMap).bindPopup(`Incident Hotspot Density: High Traffic Corridor`);
+      });
+    }
+  </script>
+</body>
+</html>

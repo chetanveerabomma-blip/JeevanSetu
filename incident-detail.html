@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Details — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-[#0d1424] px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-4">
+      <a href="command-center.html" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xl font-extrabold text-white mono" id="detail-code">JS-2026-000184</span>
+          <span id="detail-priority" class="px-2 py-0.5 rounded text-xs font-bold badge-critical">CRITICAL</span>
+          <span id="detail-status" class="px-2 py-0.5 rounded text-xs font-bold badge-assigned">PROCESSING</span>
+        </div>
+        <div class="text-xs text-slate-400" id="detail-created">Incident reported at 21:31 • Operations Live</div>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button onclick="resolveIncident()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Mark Incident Resolved</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Left: Incident Overview & Map (7 cols) -->
+    <div class="lg:col-span-7 space-y-6">
+      <!-- Incident Overview Card -->
+      <div class="panel-card p-6 space-y-4">
+        <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+          <i class="fa-solid fa-circle-info text-cyan-400"></i>
+          <span>Incident Overview & Clinical Triage</span>
+        </h2>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+          <div class="p-3 rounded bg-slate-900 border border-slate-800">
+            <span class="text-slate-400 block mb-1">Category</span>
+            <span class="font-bold text-white text-sm" id="detail-type">Road Accident</span>
+          </div>
+          <div class="p-3 rounded bg-slate-900 border border-slate-800">
+            <span class="text-slate-400 block mb-1">Casualties</span>
+            <span class="font-bold text-red-400 text-sm" id="detail-injured">2 Injured</span>
+          </div>
+          <div class="p-3 rounded bg-slate-900 border border-slate-800">
+            <span class="text-slate-400 block mb-1">Trauma Status</span>
+            <span class="font-bold text-amber-400 text-sm" id="detail-trauma">Unconscious</span>
+          </div>
+          <div class="p-3 rounded bg-slate-900 border border-slate-800">
+            <span class="text-slate-400 block mb-1">Reporter</span>
+            <span class="font-bold text-slate-200 text-sm" id="detail-reporter">Aarav Patel</span>
+          </div>
+        </div>
+
+        <div>
+          <span class="text-xs font-semibold text-slate-400 block mb-1">Location / Landmark</span>
+          <div class="p-3 rounded bg-slate-900 border border-slate-800 text-xs text-white" id="detail-address">
+            MG Road Junction near Metro Pillar 140, Metro City
+          </div>
+        </div>
+
+        <div>
+          <span class="text-xs font-semibold text-slate-400 block mb-1">Incident Description</span>
+          <div class="p-3 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300 leading-relaxed" id="detail-description">
+            Two-car collision, passenger trapped with severe bleeding and loss of consciousness.
+          </div>
+        </div>
+
+        <!-- AI Analysis Callout -->
+        <div class="p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/40 space-y-1 text-xs">
+          <div class="font-bold text-purple-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-brain text-purple-400"></i>
+            <span>Python AI Assistive Classification & Summary</span>
+          </div>
+          <p class="text-[11px] text-purple-200" id="detail-ai-summary">
+            AI Classified as ACCIDENT with CRITICAL severity. Trauma response recommended with ALS Ambulance and Traffic Police clearance.
+          </p>
+        </div>
+      </div>
+
+      <!-- Incident Location & Route Map -->
+      <div class="panel-card p-6 space-y-3">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-map-location-dot text-blue-400"></i>
+          <span>GPS Geolocation & Active Transit Corridor</span>
+        </h3>
+        <div id="incident-map" class="w-full h-72 rounded-xl border border-slate-700"></div>
+      </div>
+    </div>
+
+    <!-- Right: Chronological Timeline & Assigned Units (5 cols) -->
+    <div class="lg:col-span-5 space-y-6">
+      <!-- Assigned Multi-Agency Units -->
+      <div class="panel-card p-6 space-y-4">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-3">
+          <span class="flex items-center gap-2">
+            <i class="fa-solid fa-truck-medical text-sky-400"></i>
+            <span>Assigned Emergency Units</span>
+          </span>
+          <span class="text-[10px] text-emerald-400 font-bold mono" id="assigned-count">1 Dispatched</span>
+        </h3>
+
+        <div id="assigned-units-list" class="space-y-3">
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <div class="text-xs font-bold text-white flex items-center gap-2">
+                <span class="mono text-sky-400">AMB-104</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-sky-950 text-sky-300">AMBULANCE</span>
+              </div>
+              <div class="text-[11px] text-slate-400">Pilot: Rajesh Kumar • 98450-20104</div>
+              <div class="text-[10px] text-slate-500">Dijkstra Corridor: 2.4 km • ETA 6 mins</div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold badge-assigned">EN_ROUTE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chronological Live Audit Timeline -->
+      <div class="panel-card p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-timeline text-amber-400"></i>
+            <span>Incident Lifecycle Timeline</span>
+          </h3>
+          <span class="pulse-dot"></span>
+        </div>
+
+        <div id="timeline-container" class="space-y-0">
+          <!-- Timeline nodes generated here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    let map = null;
+    let incidentId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      incidentId = params.get('id') || 'emg-101';
+      await loadIncidentDetails(incidentId);
+    });
+
+    async function loadIncidentDetails(id) {
+      try {
+        const emg = await API.request(`/emergencies/${id}`);
+        if (!emg) return;
+
+        document.getElementById('detail-code').innerText = emg.incidentCode;
+        document.getElementById('detail-priority').innerText = emg.priority;
+        document.getElementById('detail-priority').className = `px-2 py-0.5 rounded text-xs font-bold ${emg.priority === 'CRITICAL' ? 'badge-critical' : 'badge-high'}`;
+        document.getElementById('detail-status').innerText = emg.status;
+        document.getElementById('detail-type').innerText = emg.type;
+        document.getElementById('detail-injured').innerText = `${emg.injuredCount || 0} Injured`;
+        document.getElementById('detail-trauma').innerText = emg.unconscious ? 'Trauma (Unconscious)' : 'Stable';
+        document.getElementById('detail-reporter').innerText = emg.reporterName || 'Citizen Reporter';
+        document.getElementById('detail-address').innerText = emg.address;
+        document.getElementById('detail-description').innerText = emg.description;
+
+        if (emg.createdAt) {
+          document.getElementById('detail-created').innerText = `Reported at ${new Date(emg.createdAt).toLocaleTimeString()} • Operations Live`;
+        }
+
+        // Init Map
+        initMap(emg.latitude, emg.longitude, emg.incidentCode);
+
+        // Load Timeline
+        loadTimeline(id);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function initMap(lat, lng, code) {
+      if (!map) {
+        map = L.map('incident-map').setView([lat, lng], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        const icon = L.divIcon({
+          className: 'custom-icon',
+          html: `<div class="map-marker marker-emergency w-8 h-8 text-xs">🚨</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+        L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>${code}</b><br>Emergency Scene`).openPopup();
+      }
+    }
+
+    async function loadTimeline(id) {
+      const cont = document.getElementById('timeline-container');
+      try {
+        const list = await API.request(`/emergencies/${id}/timeline`);
+        cont.innerHTML = (list || []).map(item => `
+          <div class="timeline-item">
+            <div class="timeline-node"></div>
+            <div class="text-[11px] font-bold text-slate-300 mono flex items-center justify-between">
+              <span>${item.stage}</span>
+              <span class="text-slate-500 font-normal">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+            <div class="text-xs text-slate-400 mt-1">${item.message}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">By ${item.actorRole} (${item.actorName || 'System'})</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function resolveIncident() {
+      if (!confirm('Are you sure you want to mark this emergency as completely RESOLVED?')) return;
+      try {
+        await API.request(`/emergencies/${incidentId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'RESOLVED', note: 'Incident resolved by on-scene commander.' })
+        });
+        alert('Incident marked as RESOLVED. Archiving to MongoDB.');
+        window.location.reload();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+  </script>
+</body>
+</html>
