@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Center — JeevanSetu Tactical Operations</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col overflow-hidden">
+
+  <!-- Command Top Bar -->
+  <header class="border-b border-slate-800 bg-[#090e1a] px-4 py-2.5 flex items-center justify-between z-30">
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white text-base shadow-lg shadow-red-600/30">
+          <i class="fa-solid fa-satellite-dish animate-pulse"></i>
+        </div>
+        <span class="text-lg font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <span class="text-xs font-bold text-slate-400 border-l border-slate-700 pl-3 uppercase tracking-wider">COMMAND CENTER</span>
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-[10px] font-bold text-emerald-400">
+        <span class="pulse-dot"></span>
+        <span>SYSTEM OPERATIONAL</span>
+      </div>
+    </div>
+
+    <!-- Quick Navigation to other portals -->
+    <div class="hidden lg:flex items-center space-x-4 text-xs font-semibold text-slate-400">
+      <a href="responder.html" class="hover:text-cyan-400 transition flex items-center gap-1"><i class="fa-solid fa-truck-medical"></i> Responder</a>
+      <a href="hospital.html" class="hover:text-emerald-400 transition flex items-center gap-1"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+      <a href="bloodbank.html" class="hover:text-red-400 transition flex items-center gap-1"><i class="fa-solid fa-droplet"></i> Blood Bank</a>
+      <a href="volunteer-shelter.html" class="hover:text-amber-400 transition flex items-center gap-1"><i class="fa-solid fa-person-shelter"></i> Shelters</a>
+      <a href="analytics.html" class="hover:text-blue-400 transition flex items-center gap-1"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <div class="text-right hidden sm:block">
+        <div class="text-xs font-bold text-white mono" id="commander-name">Officer Ananya Sharma</div>
+        <div class="text-[10px] text-cyan-400">Tactical Dispatcher</div>
+      </div>
+      <button onclick="refreshAll()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs" title="Refresh Live State">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+      <button onclick="API.logout()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-red-400 text-xs" title="Sign Out">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Top Metrics Bar -->
+  <div class="bg-[#0c1222] border-b border-slate-800/80 px-4 py-2 grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+    <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between px-3">
+      <span class="text-slate-400 text-[11px] uppercase font-semibold">Active Incidents</span>
+      <span class="font-bold text-white text-base mono" id="kpi-active">--</span>
+    </div>
+    <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between px-3">
+      <span class="text-slate-400 text-[11px] uppercase font-semibold">Critical Triage</span>
+      <span class="font-bold text-red-400 text-base mono" id="kpi-critical">--</span>
+    </div>
+    <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between px-3">
+      <span class="text-slate-400 text-[11px] uppercase font-semibold">Avail Ambulances</span>
+      <span class="font-bold text-emerald-400 text-base mono" id="kpi-amb">--</span>
+    </div>
+    <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between px-3">
+      <span class="text-slate-400 text-[11px] uppercase font-semibold">Police / Fire Units</span>
+      <span class="font-bold text-blue-400 text-base mono" id="kpi-police-fire">--</span>
+    </div>
+    <div class="p-1.5 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between px-3 col-span-2 sm:col-span-1">
+      <span class="text-slate-400 text-[11px] uppercase font-semibold">Trauma ICU Beds</span>
+      <span class="font-bold text-cyan-400 text-base mono" id="kpi-icu">--</span>
+    </div>
+  </div>
+
+  <!-- Command Center Grid Layout -->
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+    <!-- LEFT PANEL: Priority Queue (3 cols) -->
+    <div class="lg:col-span-3 border-r border-slate-800 bg-[#0a0f1d] flex flex-col h-full overflow-hidden">
+      <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-list-ol text-red-500"></i>
+          <span>Priority Triage Queue</span>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800" id="queue-count">0 Queued</span>
+      </div>
+
+      <!-- Live Priority Queue Stream -->
+      <div id="priority-queue-list" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <!-- Incidents Rendered here -->
+      </div>
+    </div>
+
+    <!-- CENTER PANEL: Interactive Tactical Map (6 cols) -->
+    <div class="lg:col-span-6 relative flex flex-col h-full bg-slate-950">
+      <!-- Map Container -->
+      <div id="command-map" class="flex-1 w-full h-full"></div>
+
+      <!-- Map Layer Filter Overlays -->
+      <div class="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg p-2 text-xs space-y-1.5 shadow-xl">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Layer Visibility</div>
+        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+          <input type="checkbox" id="layer-incidents" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-red-500">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Incidents</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+          <input type="checkbox" id="layer-ambulances" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-sky-500">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Ambulances</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+          <input type="checkbox" id="layer-police" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-indigo-500">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Police Patrol</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+          <input type="checkbox" id="layer-fire" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-orange-500">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-500"></span> Fire Engines</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+          <input type="checkbox" id="layer-hospitals" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-emerald-500">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Trauma Hospitals</span>
+        </label>
+      </div>
+
+      <!-- Selected Incident Quick Bar -->
+      <div id="selected-incident-bar" class="hidden absolute bottom-4 left-4 right-4 z-[400] bg-slate-900/95 backdrop-blur border border-red-500/50 rounded-xl p-3 flex items-center justify-between shadow-2xl">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-2">
+              <span id="sel-code" class="mono">JS-2026-000184</span>
+              <span id="sel-badge" class="px-2 py-0.5 rounded text-[10px] font-bold badge-critical">CRITICAL</span>
+            </div>
+            <div id="sel-desc" class="text-[11px] text-slate-400">Road Accident • 2 injured, 1 unconscious</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="zoomToSelected()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+            Center Map
+          </button>
+          <a id="sel-link" href="#" class="btn-emergency px-3.5 py-1.5 rounded text-xs font-bold flex items-center gap-1">
+            <span>Incident Room</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Multi-Factor Resource Allocation & Scoring (3 cols) -->
+    <div class="lg:col-span-3 border-l border-slate-800 bg-[#0a0f1d] flex flex-col h-full overflow-hidden">
+      <div class="p-3 border-b border-slate-800 bg-slate-900/40 flex items-center justify-between">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-network-wired text-cyan-400"></i>
+          <span>Resource Allocation Engine</span>
+        </div>
+        <span class="text-[10px] text-slate-400 mono">Java Scorer</span>
+      </div>
+
+      <!-- Algorithmic Reasoning Info -->
+      <div class="p-3 border-b border-slate-800 text-[11px] text-slate-400 bg-[#0d1424]">
+        <div class="text-slate-300 font-semibold mb-0.5" id="scorer-headline">Select an emergency from the queue</div>
+        <div class="text-[10px] text-slate-500" id="scorer-sub">Computes: Distance + Availability + Compatibility + Capacity + Workload</div>
+      </div>
+
+      <!-- Scored Candidate Responders -->
+      <div id="scored-resources-list" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <div class="text-xs text-slate-500 text-center py-10">
+          Click any emergency in the left triage queue to evaluate and rank candidate dispatch units.
+        </div>
+      </div>
+
+      <!-- Bottom Timeline & Event Ticker -->
+      <div class="h-44 border-t border-slate-800 bg-slate-950/80 p-3 flex flex-col overflow-hidden">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span>Operational Event Stream</span>
+          <span class="pulse-dot"></span>
+        </div>
+        <div id="event-ticker" class="flex-1 overflow-y-auto space-y-1.5 text-[11px]">
+          <!-- Real-time feed items -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/websocket.js"></script>
+  <script>
+    let map = null;
+    let incidentMarkers = {};
+    let responderMarkers = {};
+    let hospitalMarkers = {};
+    let routePolyline = null;
+    let selectedIncident = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initCommandMap();
+      await refreshAll();
+
+      // Listen to real-time events
+      if (window.realtime) {
+        window.realtime.on('EMERGENCY_UPDATE', () => refreshAll());
+        window.realtime.on('DISPATCH_UPDATE', () => refreshAll());
+      }
+    });
+
+    function initCommandMap() {
+      map = L.map('command-map', { zoomControl: false }).setView([12.9716, 77.5946], 13);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // Dark Tactical Tile Layer
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      }).addTo(map);
+    }
+
+    async function refreshAll() {
+      await loadKPIs();
+      await loadPriorityQueue();
+      await loadMapEntities();
+    }
+
+    async function loadKPIs() {
+      try {
+        const kpi = await API.request('/analytics/overview');
+        document.getElementById('kpi-active').innerText = kpi.activeEmergencies ?? 3;
+        document.getElementById('kpi-critical').innerText = kpi.criticalEmergencies ?? 2;
+        document.getElementById('kpi-amb').innerText = kpi.availableAmbulances ?? 6;
+        document.getElementById('kpi-police-fire').innerText = `${kpi.availablePolice ?? 4} / ${kpi.availableFire ?? 3}`;
+        document.getElementById('kpi-icu').innerText = kpi.availableIcuBeds ?? 24;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadPriorityQueue() {
+      const cont = document.getElementById('priority-queue-list');
+      try {
+        const queue = await API.request('/emergencies/priority-queue');
+        document.getElementById('queue-count').innerText = `${queue.length} Queued`;
+
+        if (queue.length === 0) {
+          cont.innerHTML = `<div class="text-xs text-slate-500 py-6 text-center">No active emergencies in triage queue.</div>`;
+          return;
+        }
+
+        cont.innerHTML = queue.map((item, index) => {
+          const isCrit = item.priority === 'CRITICAL';
+          const badgeClass = isCrit ? 'badge-critical' : item.priority === 'HIGH' ? 'badge-high' : 'badge-medium';
+          const isSelected = selectedIncident && selectedIncident.id === item.id;
+
+          return `
+            <div onclick="selectIncident('${item.id}')"
+              class="p-3 rounded-xl border transition cursor-pointer ${isSelected ? 'border-red-500 bg-red-950/30' : 'border-slate-800 bg-slate-900/80 hover:border-slate-700'}">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  ${isCrit ? '<span class="pulse-dot critical"></span>' : ''}
+                  <span class="text-xs font-bold text-white mono">${item.incidentCode}</span>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${item.priority}</span>
+              </div>
+              <div class="text-xs font-semibold text-slate-200">${item.type}</div>
+              <div class="text-[11px] text-slate-400 truncate mt-0.5">${item.address}</div>
+              <div class="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-500">
+                <span>${item.injuredCount || 0} injured ${item.unconscious ? '• Unconscious' : ''}</span>
+                <span class="font-bold text-blue-400">${item.status}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Auto-select first incident if none selected
+        if (!selectedIncident && queue.length > 0) {
+          selectIncident(queue[0].id);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadMapEntities() {
+      try {
+        // Clear previous markers
+        Object.values(incidentMarkers).forEach(m => map.removeLayer(m));
+        Object.values(responderMarkers).forEach(m => map.removeLayer(m));
+        Object.values(hospitalMarkers).forEach(m => map.removeLayer(m));
+        incidentMarkers = {};
+        responderMarkers = {};
+        hospitalMarkers = {};
+
+        // 1. Incidents
+        const queue = await API.request('/emergencies/priority-queue');
+        queue.forEach(emg => {
+          const icon = L.divIcon({
+            className: 'custom-icon',
+            html: `<div class="map-marker marker-emergency w-8 h-8 text-xs">🚨</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+          });
+          const m = L.marker([emg.latitude, emg.longitude], { icon }).addTo(map);
+          m.bindPopup(`
+            <div class="p-1 space-y-1">
+              <div class="text-xs font-bold text-red-400 mono">${emg.incidentCode} [${emg.priority}]</div>
+              <div class="text-xs font-semibold">${emg.type}</div>
+              <div class="text-[11px] text-slate-300">${emg.address}</div>
+              <div class="text-[10px] text-slate-400">${emg.description}</div>
+              <div class="pt-2">
+                <button onclick="selectIncident('${emg.id}')" class="btn-emergency w-full py-1 rounded text-[10px] font-bold">Dispatch Unit</button>
+              </div>
+            </div>
+          `);
+          incidentMarkers[emg.id] = m;
+        });
+
+        // 2. Responders
+        const responders = await API.request('/resources/responders');
+        responders.forEach(r => {
+          const isAmb = r.type === 'AMBULANCE';
+          const isPol = r.type === 'POLICE';
+          const iconType = isAmb ? 'marker-ambulance' : isPol ? 'marker-police' : 'marker-fire';
+          const emoji = isAmb ? '🚑' : isPol ? '🚔' : '🔥';
+
+          const icon = L.divIcon({
+            className: 'custom-icon',
+            html: `<div class="map-marker ${iconType} w-7 h-7 text-xs">${emoji}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+
+          const m = L.marker([r.latitude, r.longitude], { icon }).addTo(map);
+          m.bindPopup(`
+            <div class="p-1 space-y-1">
+              <div class="text-xs font-bold text-white">${r.unitCode} (${r.type})</div>
+              <div class="text-[11px] text-slate-300">${r.name}</div>
+              <div class="text-[10px] text-emerald-400 font-bold uppercase">${r.status}</div>
+              <div class="text-[10px] text-slate-400">${r.equipmentLevel}</div>
+            </div>
+          `);
+          responderMarkers[r.id] = m;
+        });
+
+        // 3. Hospitals
+        const hospitals = await API.request('/hospitals');
+        hospitals.forEach(h => {
+          const icon = L.divIcon({
+            className: 'custom-icon',
+            html: `<div class="map-marker marker-hospital w-7 h-7 text-xs">🏥</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+          const m = L.marker([h.latitude, h.longitude], { icon }).addTo(map);
+          m.bindPopup(`
+            <div class="p-1 space-y-1">
+              <div class="text-xs font-bold text-white">${h.name}</div>
+              <div class="text-[10px] text-emerald-400 font-bold">ICU Avail: ${h.icuBeds - h.occupiedIcuBeds} / ${h.icuBeds}</div>
+              <div class="text-[10px] text-slate-300">ER Beds Avail: ${h.emergencyBeds - h.occupiedEmergencyBeds}</div>
+              <div class="text-[10px] text-slate-400">${h.address}</div>
+            </div>
+          `);
+          hospitalMarkers[h.id] = m;
+        });
+
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function selectIncident(id) {
+      const queue = await API.request('/emergencies/priority-queue');
+      selectedIncident = queue.find(e => e.id === id) || queue[0];
+      if (!selectedIncident) return;
+
+      // Update Quick Bar
+      document.getElementById('selected-incident-bar').classList.remove('hidden');
+      document.getElementById('sel-code').innerText = selectedIncident.incidentCode;
+      document.getElementById('sel-desc').innerText = `${selectedIncident.type} • ${selectedIncident.injuredCount || 0} injured • ${selectedIncident.address}`;
+      document.getElementById('sel-link').href = `incident-detail.html?id=${selectedIncident.id}`;
+
+      // Update Scorer Header
+      document.getElementById('scorer-headline').innerText = `Scoring units for ${selectedIncident.incidentCode}`;
+      document.getElementById('scorer-sub').innerText = `Triage: ${selectedIncident.priority} • Required: ${(selectedIncident.requiredResources || ['AMBULANCE']).join(', ')}`;
+
+      // Run Java Resource Suitability Algorithm
+      loadScoredUnits(selectedIncident.id);
+
+      // Pan map
+      if (map && selectedIncident.latitude) {
+        map.panTo([selectedIncident.latitude, selectedIncident.longitude]);
+      }
+
+      // Re-render queue to highlight selected
+      loadPriorityQueue();
+    }
+
+    async function loadScoredUnits(incidentId) {
+      const cont = document.getElementById('scored-resources-list');
+      try {
+        const scored = await API.request(`/resources/recommend/${incidentId}`);
+        if (!scored || scored.length === 0) {
+          cont.innerHTML = `<div class="text-xs text-slate-500 py-6 text-center">No units matching suitability parameters.</div>`;
+          return;
+        }
+
+        cont.innerHTML = scored.slice(0, 5).map((item, index) => {
+          const u = item.unit;
+          const isTop = index === 0;
+
+          return `
+            <div class="p-3 rounded-xl border ${isTop ? 'border-cyan-500/60 bg-cyan-950/20' : 'border-slate-800 bg-slate-900/60'} space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full ${isTop ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-300'} flex items-center justify-center font-bold text-[10px] mono">
+                    #${index + 1}
+                  </span>
+                  <span class="text-xs font-bold text-white mono">${u.unitCode}</span>
+                  <span class="text-[10px] font-semibold text-slate-400">(${u.type})</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-black ${isTop ? 'text-cyan-400' : 'text-slate-300'} mono">${item.totalScore}%</span>
+                  <div class="text-[9px] text-slate-500 uppercase">Match Score</div>
+                </div>
+              </div>
+
+              <!-- Transparent Reasoning Factors -->
+              <div class="bg-slate-950/60 p-2 rounded-lg space-y-1 text-[10px] text-slate-300">
+                ${(item.reasons || []).map(r => `
+                  <div class="flex items-center gap-1.5 text-emerald-400">
+                    <i class="fa-solid fa-check text-[9px]"></i>
+                    <span class="text-slate-300">${r}</span>
+                  </div>
+                `).join('')}
+              </div>
+
+              <div class="pt-1 flex items-center justify-between">
+                <div class="text-[10px] text-slate-400">${u.driverName} • ${u.contactPhone}</div>
+                <button onclick="dispatchUnit('${selectedIncident.id}', '${u.id}')"
+                  class="${isTop ? 'btn-emergency' : 'btn-primary'} px-3 py-1 rounded text-[10px] font-bold transition">
+                  DISPATCH UNIT
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function dispatchUnit(emergencyId, resourceId) {
+      try {
+        const assignment = await API.request(`/resources/assign/${emergencyId}`, {
+          method: 'POST',
+          body: JSON.stringify({ resourceId: resourceId })
+        });
+
+        // Add event to ticker
+        addTickerEvent(`DISPATCHED: Unit ${assignment.unitCode} assigned to ${assignment.incidentCode}. Dijkstra ETA: ${assignment.estimatedMinutes} mins.`);
+
+        // Draw Dijkstra Route Polyline on Map
+        if (assignment.routeCoordinates && assignment.routeCoordinates.length > 0) {
+          if (routePolyline) map.removeLayer(routePolyline);
+          const latLngs = assignment.routeCoordinates.map(c => [c[1], c[0]]); // [lat, lng]
+          routePolyline = L.polyline(latLngs, {
+            color: '#38bdf8',
+            weight: 5,
+            opacity: 0.9,
+            dashArray: '8, 8',
+            className: 'animate-pulse'
+          }).addTo(map);
+          map.fitBounds(routePolyline.getBounds(), { padding: [50, 50] });
+        }
+
+        alert(`Unit ${assignment.unitCode} dispatched via Dijkstra shortest path corridor! Estimated arrival: ${assignment.estimatedMinutes} minutes.`);
+        refreshAll();
+      } catch (err) {
+        alert('Dispatch failed: ' + err.message);
+      }
+    }
+
+    function addTickerEvent(msg) {
+      const ticker = document.getElementById('event-ticker');
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const el = document.createElement('div');
+      el.className = 'text-slate-300 flex items-start gap-2';
+      el.innerHTML = `<span class="mono text-[10px] text-slate-500">${time}</span> <span>${msg}</span>`;
+      ticker.prepend(el);
+    }
+
+    function zoomToSelected() {
+      if (selectedIncident && map) {
+        map.setView([selectedIncident.latitude, selectedIncident.longitude], 15);
+      }
+    }
+
+    function toggleLayers() {
+      const showInc = document.getElementById('layer-incidents').checked;
+      const showAmb = document.getElementById('layer-ambulances').checked;
+      const showPol = document.getElementById('layer-police').checked;
+      const showFire = document.getElementById('layer-fire').checked;
+      const showHosp = document.getElementById('layer-hospitals').checked;
+
+      Object.values(incidentMarkers).forEach(m => showInc ? map.addLayer(m) : map.removeLayer(m));
+      Object.values(hospitalMarkers).forEach(m => showHosp ? map.addLayer(m) : map.removeLayer(m));
+      // toggle responders
+      API.request('/resources/responders').then(responders => {
+        responders.forEach(r => {
+          const m = responderMarkers[r.id];
+          if (!m) return;
+          if (r.type === 'AMBULANCE') showAmb ? map.addLayer(m) : map.removeLayer(m);
+          else if (r.type === 'POLICE') showPol ? map.addLayer(m) : map.removeLayer(m);
+          else if (r.type === 'FIRE_UNIT') showFire ? map.addLayer(m) : map.removeLayer(m);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+/* JeevanSetu - Emergency Command Center Styling System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --bg-primary: #0a0f1d;
+  --bg-surface: #111827;
+  --bg-card: #162032;
+  --bg-card-hover: #1e293b;
+  --border-color: #26354a;
+  --border-subtle: #1e293b;
+  
+  --critical-red: #ef4444;
+  --critical-bg: rgba(239, 68, 68, 0.15);
+  --high-orange: #f97316;
+  --high-bg: rgba(249, 115, 22, 0.15);
+  --medium-yellow: #eab308;
+  --medium-bg: rgba(234, 179, 8, 0.15);
+  --low-green: #10b981;
+  --low-bg: rgba(16, 185, 129, 0.15);
+  
+  --assigned-blue: #3b82f6;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-cyan: #06b6d4;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Glass & Card Styles */
+.panel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.panel-card:hover {
+  border-color: #38bdf840;
+}
+
+/* Priority Badges */
+.badge-critical {
+  background: var(--critical-bg);
+  color: #f87171;
+  border: 1px solid #ef444455;
+}
+.badge-high {
+  background: var(--high-bg);
+  color: #fb923c;
+  border: 1px solid #f9731655;
+}
+.badge-medium {
+  background: var(--medium-bg);
+  color: #facc15;
+  border: 1px solid #eab30855;
+}
+.badge-low {
+  background: var(--low-bg);
+  color: #34d399;
+  border: 1px solid #10b98155;
+}
+
+.badge-available {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid #10b98160;
+}
+.badge-assigned {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid #3b82f660;
+}
+.badge-enroute {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid #f9731660;
+}
+.badge-busy {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid #ef444460;
+}
+
+/* Pulsing radar for live operations */
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: #10b981;
+  position: relative;
+}
+.pulse-dot.critical {
+  background-color: #ef4444;
+}
+.pulse-dot.critical::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #ef4444;
+  animation: pulse-ring 1.5s infinite ease-out;
+}
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  animation: pulse-ring 1.8s infinite ease-out;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1322;
+}
+::-webkit-scrollbar-thumb {
+  background: #253349;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #374763;
+}
+
+/* Map Containers */
+.leaflet-container {
+  background: #0f172a !important;
+  font-family: inherit;
+}
+.leaflet-popup-content-wrapper {
+  background: #162032 !important;
+  color: #f8fafc !important;
+  border: 1px solid #26354a;
+  border-radius: 8px;
+}
+.leaflet-popup-tip {
+  background: #162032 !important;
+}
+
+/* Custom Marker Styling */
+.map-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
+  border: 2px solid white;
+}
+.marker-emergency { background: #ef4444; animation: marker-pulse 1.4s infinite; }
+.marker-ambulance { background: #0284c7; }
+.marker-police { background: #4f46e5; }
+.marker-fire { background: #ea580c; }
+.marker-hospital { background: #059669; }
+.marker-bloodbank { background: #be123c; }
+.marker-shelter { background: #d97706; }
+.marker-volunteer { background: #7c3aed; }
+
+@keyframes marker-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Timeline Components */
+.timeline-item {
+  position: relative;
+  padding-left: 28px;
+  border-left: 2px solid #26354a;
+  padding-bottom: 20px;
+}
+.timeline-item:last-child {
+  border-left-color: transparent;
+}
+.timeline-node {
+  position: absolute;
+  left: -7px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #0a0f1d;
+}
+
+/* Buttons */
+.btn-emergency {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+.btn-emergency:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+}
+.btn-secondary:hover {
+  background: #273549;
+}

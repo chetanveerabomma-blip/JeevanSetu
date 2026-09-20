@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # MongoDB 8.0/latest with 2dsphere indexing support
+  mongodb:
+    image: mongo:7.0
+    container_name: jeevansetu-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=jeevansetu
+    volumes:
+      - mongo_data:/data/db
+
+  # Python FastAPI AI Service
+  ai-python:
+    build:
+      context: ./ai-python
+      dockerfile: Dockerfile
+    container_name: jeevansetu-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    depends_on:
+      - mongodb
+
+  # Spring Boot Java Backend & Static Frontend
+  backend-java:
+    build:
+      context: ./backend-java
+      dockerfile: Dockerfile
+    container_name: jeevansetu-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/jeevansetu
+      - PYTHON_AI_URL=http://ai-python:8000
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    depends_on:
+      - mongodb
+      - ai-python
+
+volumes:
+  mongo_data:

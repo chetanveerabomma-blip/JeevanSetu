@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — JeevanSetu Emergency Network</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col justify-center">
+
+  <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
+    <!-- Left Visual Panel -->
+    <div class="lg:col-span-7 bg-[#0d1424] relative flex flex-col justify-between p-8 sm:p-14 overflow-hidden border-r border-slate-800">
+      <!-- Radar animation background -->
+      <div class="absolute inset-0 opacity-20 pointer-events-none flex items-center justify-center">
+        <div class="w-[500px] h-[500px] border border-red-500/40 rounded-full animate-ping duration-1000"></div>
+        <div class="absolute w-[300px] h-[300px] border border-blue-500/40 rounded-full"></div>
+        <div class="absolute w-[100px] h-[100px] border border-emerald-500/50 rounded-full"></div>
+      </div>
+
+      <!-- Top brand -->
+      <div class="relative z-10">
+        <a href="index.html" class="inline-flex items-center space-x-3 group">
+          <div class="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-red-600/30">
+            <i class="fa-solid fa-truck-medical"></i>
+          </div>
+          <div>
+            <div class="text-2xl font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></div>
+            <div class="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Emergency Response Platform</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center message -->
+      <div class="relative z-10 my-16 max-w-lg">
+        <div class="text-4xl mb-4">🆘</div>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+          Connected Response.<br>
+          Faster Coordination.<br>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-400">
+            Safer Communities.
+          </span>
+        </h2>
+        <p class="mt-4 text-slate-400 text-sm leading-relaxed">
+          Integrated command infrastructure linking citizens to priority medical, fire, police, trauma centers, and life-saving blood supplies within milliseconds.
+        </p>
+
+        <!-- Dynamic Live Indicators -->
+        <div class="mt-8 flex flex-wrap gap-4">
+          <div class="px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs flex items-center gap-2">
+            <span class="pulse-dot"></span>
+            <span class="text-slate-300">Java 21 Priority Engine Active</span>
+          </div>
+          <div class="px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs flex items-center gap-2">
+            <span class="pulse-dot"></span>
+            <span class="text-slate-300">Dijkstra Routing Online</span>
+          </div>
+          <div class="px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-700 text-xs flex items-center gap-2">
+            <span class="pulse-dot"></span>
+            <span class="text-slate-300">MongoDB 2dsphere Grid</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom link -->
+      <div class="relative z-10 text-xs text-slate-500">
+        Advanced Programming Practice Major Project &copy; 2026 JeevanSetu
+      </div>
+    </div>
+
+    <!-- Right Login Form Panel -->
+    <div class="lg:col-span-5 flex flex-col justify-center p-8 sm:p-14 bg-[#0a0f1d]">
+      <div class="max-w-md w-full mx-auto">
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold text-white tracking-tight">Portal Sign In</h2>
+          <p class="text-xs text-slate-400 mt-1">Access role-specific emergency dashboard and resources</p>
+        </div>
+
+        <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Email / Phone</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <i class="fa-solid fa-envelope"></i>
+              </span>
+              <input type="text" id="email" required
+                class="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                placeholder="name@jeevansetu.gov.in">
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-semibold text-slate-300 uppercase">Password</label>
+              <a href="#" class="text-xs text-blue-400 hover:underline">Forgot password?</a>
+            </div>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <i class="fa-solid fa-lock"></i>
+              </span>
+              <input type="password" id="password" required
+                class="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                placeholder="••••••••••••">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+              <span>Remember this session</span>
+            </label>
+          </div>
+
+          <button type="submit" id="login-btn"
+            class="w-full py-3.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
+            <span>LOGIN</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+
+        <div id="login-error" class="hidden mt-3 p-3 rounded bg-red-950/80 border border-red-500/50 text-red-200 text-xs text-center"></div>
+
+        <!-- Continue as Citizen Button -->
+        <div class="mt-4">
+          <a href="citizen.html" class="w-full py-3 px-4 rounded-lg bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-user-shield text-emerald-400"></i>
+            <span>Continue as Citizen (Guest Reporting)</span>
+          </a>
+        </div>
+
+        <!-- Instant Demo Logins (College Evaluation Mode) -->
+        <div class="mt-8 pt-6 border-t border-slate-800">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+            <span>⚡ Instant Demo Profiles (Single Click)</span>
+            <span class="text-emerald-400 font-normal">Ready</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="demoLogin('CONTROL_CENTER')" class="p-2.5 rounded bg-slate-900 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/50 text-left transition">
+              <div class="text-xs font-bold text-cyan-400 flex items-center gap-1.5"><i class="fa-solid fa-desktop"></i> Command Center</div>
+              <div class="text-[10px] text-slate-500">Dispatcher & Operations</div>
+            </button>
+            <button onclick="demoLogin('CITIZEN')" class="p-2.5 rounded bg-slate-900 hover:bg-emerald-950/60 border border-slate-800 hover:border-emerald-500/50 text-left transition">
+              <div class="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><i class="fa-solid fa-user"></i> Citizen Portal</div>
+              <div class="text-[10px] text-slate-500">Report & Track Incident</div>
+            </button>
+            <button onclick="demoLogin('AMBULANCE')" class="p-2.5 rounded bg-slate-900 hover:bg-blue-950/60 border border-slate-800 hover:border-blue-500/50 text-left transition">
+              <div class="text-xs font-bold text-blue-400 flex items-center gap-1.5"><i class="fa-solid fa-truck-medical"></i> Ambulance (A-104)</div>
+              <div class="text-[10px] text-slate-500">ALS Pilot Dashboard</div>
+            </button>
+            <button onclick="demoLogin('HOSPITAL')" class="p-2.5 rounded bg-slate-900 hover:bg-rose-950/60 border border-slate-800 hover:border-rose-500/50 text-left transition">
+              <div class="text-xs font-bold text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-hospital"></i> Victoria Hospital</div>
+              <div class="text-[10px] text-slate-500">Trauma ICU & Beds</div>
+            </button>
+            <button onclick="demoLogin('BLOOD_BANK')" class="p-2.5 rounded bg-slate-900 hover:bg-red-950/60 border border-slate-800 hover:border-red-500/50 text-left transition">
+              <div class="text-xs font-bold text-red-400 flex items-center gap-1.5"><i class="fa-solid fa-droplet"></i> Red Cross Blood</div>
+              <div class="text-[10px] text-slate-500">Live Inventory Manager</div>
+            </button>
+            <button onclick="demoLogin('ADMIN')" class="p-2.5 rounded bg-slate-900 hover:bg-amber-950/60 border border-slate-800 hover:border-amber-500/50 text-left transition">
+              <div class="text-xs font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> System Admin</div>
+              <div class="text-[10px] text-slate-500">Full System Governance</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6 text-center text-xs text-slate-400">
+          Don't have an account?
+          <a href="register.html" class="text-blue-400 font-semibold hover:underline">Register now</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errBox = document.getElementById('login-error');
+      errBox.classList.add('hidden');
+
+      try {
+        const auth = await API.request('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        });
+        API.setAuth(auth);
+        redirectByRole(auth.role);
+      } catch (err) {
+        errBox.innerText = err.message || 'Login failed. Please check credentials.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function demoLogin(role) {
+      try {
+        const auth = await API.request(`/auth/demo/${role}`);
+        API.setAuth(auth);
+        redirectByRole(auth.role);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function redirectByRole(role) {
+      if (role === 'CONTROL_CENTER' || role === 'ADMIN') {
+        window.location.href = 'command-center.html';
+      } else if (role === 'AMBULANCE' || role === 'POLICE' || role === 'FIRE') {
+        window.location.href = 'responder.html';
+      } else if (role === 'HOSPITAL') {
+        window.location.href = 'hospital.html';
+      } else if (role === 'BLOOD_BANK') {
+        window.location.href = 'bloodbank.html';
+      } else if (role === 'VOLUNTEER') {
+        window.location.href = 'volunteer-shelter.html';
+      } else {
+        window.location.href = 'citizen.html';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Trauma Operations — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-[#0d1424] px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-xl">
+        <i class="fa-solid fa-hospital"></i>
+      </div>
+      <div>
+        <div class="text-base font-extrabold text-white flex items-center gap-2">
+          <span>Government Victoria Trauma Hospital</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-900/40 text-emerald-400 border border-emerald-700/50">ER ACTIVE</span>
+        </div>
+        <div class="text-[11px] text-slate-400">Level-1 Trauma Center • Registration ID: HOSP-1001</div>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <a href="command-center.html" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+        Command Grid
+      </a>
+      <button onclick="API.logout()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Inbound Emergency Notice -->
+    <div class="p-4 rounded-xl bg-red-950/40 border border-red-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+        <div>
+          <div class="text-xs font-bold text-red-400 uppercase tracking-wider">🚨 Inbound Critical Trauma Alert (ETA: 4 Mins)</div>
+          <div class="text-sm font-bold text-white mt-0.5">Ambulance AMB-104 en route with 1 unconscious passenger (Road Collision).</div>
+        </div>
+      </div>
+      <button onclick="alert('Trauma Team Alpha dispatched to Ambulance Bay 1.')" class="btn-emergency px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap">
+        Acknowledge & Mobilize Trauma Team
+      </button>
+    </div>
+
+    <!-- Live Bed Capacity Counters -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="panel-card p-5 border-t-4 border-t-emerald-500">
+        <div class="flex justify-between items-center text-xs text-slate-400 uppercase font-semibold">
+          <span>ICU Beds Available</span>
+          <i class="fa-solid fa-bed-pulse text-emerald-400"></i>
+        </div>
+        <div class="text-3xl font-extrabold text-emerald-400 mt-2 mono" id="disp-icu">7 / 18</div>
+        <div class="text-[11px] text-slate-500 mt-1">11 beds occupied</div>
+      </div>
+
+      <div class="panel-card p-5 border-t-4 border-t-blue-500">
+        <div class="flex justify-between items-center text-xs text-slate-400 uppercase font-semibold">
+          <span>Emergency ER Beds</span>
+          <i class="fa-solid fa-truck-ramp-box text-blue-400"></i>
+        </div>
+        <div class="text-3xl font-extrabold text-blue-400 mt-2 mono" id="disp-er">18 / 40</div>
+        <div class="text-[11px] text-slate-500 mt-1">22 beds occupied</div>
+      </div>
+
+      <div class="panel-card p-5 border-t-4 border-t-purple-500">
+        <div class="flex justify-between items-center text-xs text-slate-400 uppercase font-semibold">
+          <span>Active Ventilators</span>
+          <i class="fa-solid fa-lungs text-purple-400"></i>
+        </div>
+        <div class="text-3xl font-extrabold text-purple-400 mt-2 mono" id="disp-vent">5 / 12</div>
+        <div class="text-[11px] text-slate-500 mt-1">7 in active use</div>
+      </div>
+
+      <div class="panel-card p-5 border-t-4 border-t-amber-500">
+        <div class="flex justify-between items-center text-xs text-slate-400 uppercase font-semibold">
+          <span>Operating Theaters</span>
+          <i class="fa-solid fa-heart-pulse text-amber-400"></i>
+        </div>
+        <div class="text-3xl font-extrabold text-amber-400 mt-2 mono">4 / 6</div>
+        <div class="text-[11px] text-slate-500 mt-1">2 surgeries in progress</div>
+      </div>
+    </div>
+
+    <!-- Capacity Update Form -->
+    <div class="panel-card p-6 space-y-6">
+      <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-emerald-400"></i>
+          <span>Live Capacity & Resource Controller</span>
+        </h2>
+        <span class="text-xs text-slate-400">Real-time sync with Command Center</span>
+      </div>
+
+      <form onsubmit="updateCapacity(event)" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-slate-300">Total ICU Beds</label>
+            <input type="number" id="inp-total-icu" value="18" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white mono text-sm">
+            <label class="block text-xs font-semibold text-slate-400">Occupied ICU Beds</label>
+            <input type="number" id="inp-occ-icu" value="11" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white mono text-sm">
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-slate-300">Total ER Beds</label>
+            <input type="number" id="inp-total-er" value="40" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white mono text-sm">
+            <label class="block text-xs font-semibold text-slate-400">Occupied ER Beds</label>
+            <input type="number" id="inp-occ-er" value="22" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white mono text-sm">
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-slate-300">Total Ventilators</label>
+            <input type="number" id="inp-total-vent" value="12" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white mono text-sm">
+            <label class="block text-xs font-semibold text-slate-400">Occupied Ventilators</label>
+            <input type="number" id="inp-occ-vent" value="7" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white mono text-sm">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary px-6 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>BROADCAST UPDATED CAPACITY</span>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function updateCapacity(e) {
+      e.preventDefault();
+      const totIcu = parseInt(document.getElementById('inp-total-icu').value);
+      const occIcu = parseInt(document.getElementById('inp-occ-icu').value);
+      const totEr = parseInt(document.getElementById('inp-total-er').value);
+      const occEr = parseInt(document.getElementById('inp-occ-er').value);
+      const totVent = parseInt(document.getElementById('inp-total-vent').value);
+      const occVent = parseInt(document.getElementById('inp-occ-vent').value);
+
+      document.getElementById('disp-icu').innerText = `${totIcu - occIcu} / ${totIcu}`;
+      document.getElementById('disp-er').innerText = `${totEr - occEr} / ${totEr}`;
+      document.getElementById('disp-vent').innerText = `${totVent - occVent} / ${totVent}`;
+
+      try {
+        await API.request('/hospitals/hosp-1/capacity', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            icuBeds: totIcu,
+            occupiedIcuBeds: occIcu,
+            emergencyBeds: totEr,
+            occupiedEmergencyBeds: occEr,
+            ventilators: totVent,
+            occupiedVentilators: occVent
+          })
+        });
+        alert('Hospital capacity updated and broadcasted to Command Center via WebSocket!');
+      } catch (err) {
+        alert('Capacity updated locally.');
+      }
+    }
+  </script>
+</body>
+</html>

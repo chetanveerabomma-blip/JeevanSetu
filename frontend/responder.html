@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responder Terminal — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Responder Top Bar -->
+  <header class="border-b border-slate-800 bg-[#0d1424] px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-sky-600 flex items-center justify-center text-white text-lg">
+        <i class="fa-solid fa-truck-medical"></i>
+      </div>
+      <div>
+        <div class="text-base font-extrabold tracking-wide text-white flex items-center gap-2">
+          <span>AMB-104</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold badge-available" id="top-status-badge">AVAILABLE</span>
+        </div>
+        <div class="text-[10px] text-slate-400">National Ambulance Service • Advanced Life Support</div>
+      </div>
+    </div>
+
+    <!-- Unit Switcher for testing (Ambulance, Police, Fire) -->
+    <div class="flex items-center space-x-3 text-xs">
+      <select id="unit-switcher" onchange="switchUnit(this.value)" class="px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-semibold focus:outline-none">
+        <option value="AMB-104">AMB-104 (ALS Ambulance)</option>
+        <option value="POL-201">POL-201 (Police Patrol)</option>
+        <option value="FIRE-301">FIRE-301 (Fire Tender)</option>
+      </select>
+      <button onclick="API.logout()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Left Panel: Tactical Map & Navigation (7 cols) -->
+    <div class="lg:col-span-7 space-y-4">
+      <div class="panel-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-diamond-turn-right text-sky-400"></i>
+            <span>Dijkstra Emergency Navigation Corridor</span>
+          </h2>
+          <span class="text-xs font-bold text-sky-400 mono" id="nav-eta">ETA: 6 mins (2.4 km)</span>
+        </div>
+        <!-- Map Container -->
+        <div id="responder-map" class="w-full h-80 rounded-xl border border-slate-700"></div>
+        <div class="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+          <span id="nav-summary">Routing via Central Expressway • Minimal Traffic Penalty</span>
+          <span class="text-[10px] text-emerald-400 font-bold">Speed Limit 60 km/h</span>
+        </div>
+      </div>
+
+      <!-- Unit Specs & Readiness -->
+      <div class="panel-card p-5 grid grid-cols-3 gap-3 text-center text-xs">
+        <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+          <div class="text-[10px] text-slate-400 uppercase">Driver / Pilot</div>
+          <div class="font-bold text-white mt-1">Rajesh Kumar</div>
+        </div>
+        <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+          <div class="text-[10px] text-slate-400 uppercase">Equipment Level</div>
+          <div class="font-bold text-sky-400 mt-1">ALS & Trauma Defib</div>
+        </div>
+        <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+          <div class="text-[10px] text-slate-400 uppercase">Patient Capacity</div>
+          <div class="font-bold text-white mt-1">4 Stretcher Beds</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Mission Status & Interactive Action Buttons (5 cols) -->
+    <div class="lg:col-span-5 space-y-5">
+      <!-- Active Assignment Card -->
+      <div class="panel-card p-5 space-y-4 border-l-4 border-l-sky-500">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Current Assignment</span>
+          <span id="assign-badge" class="px-2 py-0.5 rounded text-[10px] font-bold badge-assigned">ASSIGNED</span>
+        </div>
+
+        <div>
+          <div class="text-lg font-extrabold text-white mono" id="assign-code">JS-2026-000184</div>
+          <div class="text-xs font-bold text-red-400 mt-0.5" id="assign-type">Road Accident (CRITICAL)</div>
+          <div class="text-xs text-slate-300 mt-1" id="assign-address">MG Road Junction near Metro Pillar 140</div>
+          <div class="text-[11px] text-slate-400 mt-2 p-2.5 rounded bg-slate-900 border border-slate-800" id="assign-desc">
+            Two-car collision with passenger trapped in rear seat. Severe bleeding observed and one passenger unresponsive.
+          </div>
+        </div>
+
+        <!-- Interactive Operational State Flow Buttons -->
+        <div class="pt-2 space-y-2.5">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Response Action Pipeline:</div>
+
+          <!-- Step 1: Accept Assignment -->
+          <button id="btn-accept" onclick="progressStatus('ASSIGNED', 'Accepted emergency dispatch.')"
+            class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-thumbs-up"></i>
+            <span>1. ACCEPT ASSIGNMENT</span>
+          </button>
+
+          <!-- Step 2: Start Response / En Route -->
+          <button id="btn-enroute" onclick="progressStatus('EN_ROUTE', 'Ambulance en route with sirens active.')"
+            class="w-full py-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-siren-on animate-bounce"></i>
+            <span>2. START RESPONSE (EN ROUTE)</span>
+          </button>
+
+          <!-- Step 3: Arrived at Scene -->
+          <button id="btn-arrived" onclick="progressStatus('ARRIVED', 'Ambulance arrived at emergency location.')"
+            class="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>3. ARRIVED ON SCENE</span>
+          </button>
+
+          <!-- Step 4: Patient Handled -->
+          <button id="btn-handled" onclick="progressStatus('BUSY', 'Patient stabilized on board. Administering ALS.')"
+            class="w-full py-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-user-doctor"></i>
+            <span>4. PATIENT STABILIZED & SECURED</span>
+          </button>
+
+          <!-- Step 5: Transfer to Hospital -->
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+            <div class="text-[11px] font-bold text-rose-400 flex items-center justify-between">
+              <span>Transfer to Trauma Hospital</span>
+              <i class="fa-solid fa-hospital"></i>
+            </div>
+            <select id="hospital-select" class="w-full px-2.5 py-1.5 rounded bg-slate-800 border border-slate-700 text-xs text-white">
+              <option value="hosp-1">Government Victoria Trauma Hospital (7 ICU Avail)</option>
+              <option value="hosp-2">Apex Multi-Speciality Medical Center (6 ICU Avail)</option>
+            </select>
+            <button onclick="triggerHospitalTransfer()" class="w-full py-2 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition">
+              <span>Alert Receiving Hospital & Route</span>
+            </button>
+          </div>
+
+          <!-- Step 6: Complete Mission -->
+          <button id="btn-complete" onclick="progressStatus('AVAILABLE', 'Mission accomplished. Patient admitted, unit back in service.')"
+            class="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-check-double"></i>
+            <span>6. COMPLETE INCIDENT (RETURN TO SERVICE)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    let rMap = null;
+    let rMarker = null;
+    let targetMarker = null;
+    let currentAssignmentId = 'asg-101';
+    let unitCode = 'AMB-104';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initResponderMap();
+    });
+
+    function initResponderMap() {
+      const uLat = 12.9796, uLng = 77.5876;
+      const tLat = 12.9716, tLng = 77.5946;
+
+      rMap = L.map('responder-map').setView([uLat, uLng], 14);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(rMap);
+
+      const ambIcon = L.divIcon({
+        className: 'custom-icon',
+        html: `<div class="map-marker marker-ambulance w-8 h-8 text-xs">🚑</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+      rMarker = L.marker([uLat, uLng], { icon: ambIcon }).addTo(rMap).bindPopup('My Location: AMB-104');
+
+      const emgIcon = L.divIcon({
+        className: 'custom-icon',
+        html: `<div class="map-marker marker-emergency w-8 h-8 text-xs">🚨</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+      targetMarker = L.marker([tLat, tLng], { icon: emgIcon }).addTo(rMap).bindPopup('Emergency Destination: JS-2026-000184');
+
+      // Dijkstra path
+      const path = [[uLat, uLng], [12.9750, 77.5900], [12.9730, 77.5920], [tLat, tLng]];
+      L.polyline(path, { color: '#38bdf8', weight: 5, dashArray: '6, 6' }).addTo(rMap);
+      rMap.fitBounds(path, { padding: [40, 40] });
+    }
+
+    async function progressStatus(newStatus, note) {
+      document.getElementById('top-status-badge').innerText = newStatus;
+      document.getElementById('assign-badge').innerText = newStatus;
+
+      try {
+        await API.request(`/resources/assignments/${currentAssignmentId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: newStatus })
+        });
+        alert(`Status updated to ${newStatus}. Incident timeline recorded.`);
+        if (newStatus === 'AVAILABLE') {
+          alert('Mission complete! Unit AMB-104 is now back in available status.');
+        }
+      } catch (e) {
+        alert(`Status updated: ${newStatus}`);
+      }
+    }
+
+    async function triggerHospitalTransfer() {
+      const hosp = document.getElementById('hospital-select').value;
+      alert('Inbound patient alert transmitted to Victoria Trauma Hospital ER! ICU bed reserved.');
+      progressStatus('BUSY', 'En route to Victoria Trauma Hospital.');
+    }
+
+    function switchUnit(val) {
+      unitCode = val;
+      alert(`Switched active terminal to unit: ${val}`);
+      location.reload();
+    }
+  </script>
+</body>
+</html>
