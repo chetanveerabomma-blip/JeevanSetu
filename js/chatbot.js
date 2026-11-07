@@ -339,6 +339,9 @@
     langSelect.addEventListener('change', (e) => {
       currentLang = e.target.value;
       localStorage.setItem('jeevansetu_lang', currentLang);
+      if (window.I18n && window.I18n.currentLang !== currentLang) {
+        window.I18n.setLanguage(currentLang);
+      }
       updateLocalizedLabels();
       if (recognition) {
         recognition.lang = LANG_SPEECH_CODES[currentLang] || 'en-IN';
@@ -348,6 +351,21 @@
         text: `Language switched to **${langSelect.options[langSelect.selectedIndex].text}**. How can I help you?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
+    });
+
+    // Listen to global language switch from navbar/header
+    window.addEventListener('languageChanged', (e) => {
+      const newLang = e.detail && e.detail.lang;
+      if (newLang && newLang !== currentLang) {
+        currentLang = newLang;
+        if (langSelect && langSelect.value !== newLang) {
+          langSelect.value = newLang;
+        }
+        updateLocalizedLabels();
+        if (recognition) {
+          recognition.lang = LANG_SPEECH_CODES[currentLang] || 'en-IN';
+        }
+      }
     });
 
     // Send Message
