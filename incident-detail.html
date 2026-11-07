@@ -30,6 +30,10 @@
     </div>
 
     <div class="flex items-center space-x-3">
+      <button onclick="openDispatcherSummaryModal()" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/30">
+        <i class="fa-solid fa-robot"></i>
+        <span>AI Dispatcher Summary</span>
+      </button>
       <button onclick="resolveIncident()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2">
         <i class="fa-solid fa-circle-check"></i>
         <span>Mark Incident Resolved</span>
@@ -144,8 +148,78 @@
           <!-- Timeline nodes generated here -->
         </div>
       </div>
+
+      <!-- Tactical Multi-Agency Communications Channel -->
+      <div class="panel-card p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-walkie-talkie text-cyan-400"></i>
+            <span>Multi-Agency Tactical Channel</span>
+          </h3>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 font-bold border border-blue-700/40">SECURE RADIO</span>
+        </div>
+
+        <div id="agency-messages-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs">
+          <!-- Live Agency Messages Loaded Here -->
+        </div>
+
+        <!-- Transmit message bar -->
+        <div class="pt-2 border-t border-slate-800 flex gap-2">
+          <select id="agency-select-type" class="bg-slate-900 border border-slate-700 text-slate-300 rounded px-2 py-1.5 text-xs">
+            <option value="DISPATCH">Command</option>
+            <option value="EMS">Ambulance</option>
+            <option value="POLICE">Police</option>
+            <option value="FIRE">Fire</option>
+            <option value="ER_TRAUMA">Hospital</option>
+          </select>
+          <input type="text" id="agency-msg-input" placeholder="Transmit tactical update..." class="flex-1 bg-slate-900 border border-slate-700 text-white rounded px-3 py-1.5 text-xs">
+          <button onclick="transmitAgencyMsg()" class="btn-primary px-3 py-1.5 rounded text-xs font-bold">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </main>
+
+  <!-- AI Dispatcher Summary Modal -->
+  <div class="js-ai-summary-modal" id="summaryModal">
+    <div class="js-ai-summary-content">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-robot text-sky-400"></i>
+          <span>AI Dispatcher Incident Summary</span>
+        </h3>
+        <button onclick="closeSummaryModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Original Caller Narrative</div>
+          <div id="sum-original" class="p-2.5 rounded bg-slate-900 text-slate-300 italic border border-slate-800"></div>
+        </div>
+
+        <div>
+          <div class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Confirmed Extracted Facts</span>
+          </div>
+          <ul id="sum-confirmed" class="list-disc pl-4 space-y-1 text-slate-200"></ul>
+        </div>
+
+        <div>
+          <div class="text-[10px] text-amber-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Uncertain Information (Requires On-Scene Verification)</span>
+          </div>
+          <ul id="sum-uncertain" class="list-disc pl-4 space-y-1 text-slate-400"></ul>
+        </div>
+
+        <div class="p-3 rounded-lg bg-sky-950/40 border border-sky-800/40 text-sky-200" id="sum-triage"></div>
+      </div>
+    </div>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/chatbot.js"></script>
@@ -184,9 +258,79 @@
 
         // Load Timeline
         loadTimeline(id);
+
+        // Load Tactical Multi-Agency Comms
+        loadAgencyComms(id);
       } catch (e) {
         console.error(e);
       }
+    }
+
+    async function loadAgencyComms(id) {
+      const cont = document.getElementById('agency-messages-list');
+      try {
+        const msgs = await API.request(`/agency-comms/incident/${id}`);
+        if (!msgs || msgs.length === 0) {
+          cont.innerHTML = '<div class="text-slate-500 italic p-2 text-center">No messages on tactical frequency yet.</div>';
+          return;
+        }
+
+        cont.innerHTML = msgs.map(m => {
+          const isUrgent = m.priority === 'URGENT' || m.priority === 'CRITICAL_ALERT';
+          return `
+            <div class="p-2 rounded bg-slate-900 border ${isUrgent ? 'border-red-500/50 bg-red-950/20' : 'border-slate-800'}">
+              <div class="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
+                <span class="font-bold text-sky-400">[${m.agencyType || m.senderRole}] ${m.senderName}</span>
+                <span>${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div class="text-slate-200">${m.message}</div>
+            </div>
+          `;
+        }).join('');
+        cont.scrollTop = cont.scrollHeight;
+      } catch (e) {
+        console.error('Agency comms load error', e);
+      }
+    }
+
+    async function transmitAgencyMsg() {
+      const input = document.getElementById('agency-msg-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const agencyType = document.getElementById('agency-select-type').value;
+      input.value = '';
+
+      try {
+        await API.request(`/agency-comms/incident/${incidentId}`, {
+          method: 'POST',
+          body: JSON.stringify({ message: text, agencyType: agencyType, priority: 'ROUTINE' })
+        });
+        loadAgencyComms(incidentId);
+      } catch (e) {
+        alert('Could not transmit tactical message: ' + e.message);
+      }
+    }
+
+    async function openDispatcherSummaryModal() {
+      const modal = document.getElementById('summaryModal');
+      modal.classList.add('active');
+
+      try {
+        const summary = await API.request(`/assistant/dispatcher-summary/${incidentId}`);
+        if (summary) {
+          document.getElementById('sum-original').innerText = summary.original_report || 'N/A';
+          document.getElementById('sum-confirmed').innerHTML = (summary.confirmed_facts || []).map(f => `<li>${f}</li>`).join('') || '<li>No verified facts logged yet.</li>';
+          document.getElementById('sum-uncertain').innerHTML = (summary.uncertain_information || []).map(u => `<li>${u}</li>`).join('') || '<li>None</li>';
+          document.getElementById('sum-triage').innerText = summary.triage_summary || 'Triage summary ready.';
+        }
+      } catch (e) {
+        console.error('Summary load error', e);
+      }
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('summaryModal').classList.remove('active');
     }
 
     function initMap(lat, lng, code) {
