@@ -303,6 +303,87 @@ const API = {
       };
     }
 
+    // 11. AI Assistant Endpoints
+    if (endpoint === '/assistant/chat') {
+      const body = JSON.parse(options.body || '{}');
+      const text = body.message || '';
+      const lower = text.toLowerCase();
+      let category = 'MEDICAL';
+      let priority = 'HIGH';
+      if (lower.includes('accident') || lower.includes('crash')) category = 'ACCIDENT';
+      if (lower.includes('fire') || lower.includes('smoke')) { category = 'FIRE'; priority = 'CRITICAL'; }
+      if (lower.includes('unconscious') || lower.includes('critical')) priority = 'CRITICAL';
+
+      let intent = 'REPORT_EMERGENCY';
+      let respText = `🚨 Emergency detected: ${category} [${priority} priority]. Review draft details below to confirm.`;
+
+      if (lower.includes('hospital')) {
+        intent = 'FIND_HOSPITAL';
+        respText = `🏥 Found ${store.hospitals.length} nearby verified hospitals.`;
+      } else if (lower.includes('ambulance')) {
+        intent = 'FIND_AMBULANCE';
+        respText = `🚑 Found ${store.responders.filter(r => r.type === 'AMBULANCE').length} regional ambulances.`;
+      } else if (lower.includes('status') || lower.includes('track')) {
+        intent = 'CHECK_STATUS';
+        respText = `📋 Incident status retrieved.`;
+      } else if (lower.includes('guideline') || lower.includes('help')) {
+        intent = 'EMERGENCY_GUIDELINES';
+        respText = `📖 Emergency Guidelines & First Aid Protocols loaded.`;
+      }
+
+      return {
+        text: respText,
+        intent: intent,
+        category: category,
+        priority: priority,
+        confidenceScore: 0.92,
+        emergencyDraft: intent === 'REPORT_EMERGENCY' ? {
+          type: category,
+          priority: priority,
+          description: text,
+          latitude: body.latitude || 17.3850,
+          longitude: body.longitude || 78.4867,
+          address: 'GPS Coordinates Captured',
+          injuredCount: 1,
+          unconscious: lower.includes('unconscious'),
+          severeBleeding: lower.includes('bleed'),
+          fireInvolved: category === 'FIRE'
+        } : null,
+        hospitals: store.hospitals.slice(0, 3),
+        ambulances: store.responders.filter(r => r.type === 'AMBULANCE').slice(0, 3),
+        incidentStatus: store.emergencies[0] || null,
+        guidelineContent: `1. CPR: 100-120 compressions/min\n2. Severe Bleeding: Direct pressure\n3. Helpline: 112 / 108`
+      };
+    }
+
+    if (endpoint === '/assistant/emergency-confirm') {
+      const body = JSON.parse(options.body || '{}');
+      const incCode = 'JS-2026-' + Math.floor(100000 + Math.random() * 900000);
+      const newEmergency = {
+        id: 'emg_' + Date.now(),
+        incidentCode: incCode,
+        type: body.type || 'MEDICAL',
+        priority: body.priority || 'HIGH',
+        status: 'REPORTED',
+        latitude: body.latitude || 17.3850,
+        longitude: body.longitude || 78.4867,
+        address: body.address || 'Reported via JeevanSetu AI Assistant',
+        description: body.description || 'Emergency incident reported',
+        peopleAffected: body.peopleAffected || 1,
+        injuredCount: body.injuredCount || 1,
+        unconscious: !!body.unconscious,
+        severeBleeding: !!body.severeBleeding,
+        fireInvolved: !!body.fireInvolved,
+        trapped: !!body.trapped,
+        requiredResources: ['AMBULANCE', 'HOSPITAL'],
+        assignedResourceIds: [],
+        createdAt: new Date().toISOString()
+      };
+      store.emergencies.unshift(newEmergency);
+      this.saveLocalStore(store);
+      return newEmergency;
+    }
+
     return {};
   },
 
