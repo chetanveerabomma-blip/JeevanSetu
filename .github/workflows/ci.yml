@@ -1,0 +1,51 @@
+name: JeevanSetu Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-java-build:
+    name: Build & Test Java Spring Boot Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compile & Verify Java Backend
+        working-directory: backend-java
+        run: mvn clean test-compile --batch-mode
+
+  python-ai-lint:
+    name: Lint & Verify Python AI Microservice
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        working-directory: ai-python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Test Python Import & Syntax
+        working-directory: ai-python
+        run: python -c "import main; print('FastAPI Loaded:', main.app.title)"

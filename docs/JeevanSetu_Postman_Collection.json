@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "JeevanSetu Emergency Response API",
+    "description": "Postman Collection covering all endpoints: Authentication, Emergencies, AI Assistant, SOS Trigger, Multi-Agency Comms, Hospitals, Responders, and Analytics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login (Command Center)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"command@jeevansetu.gov.in\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Demo Login (Citizen)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/auth/demo/citizen", "host": ["{{baseUrl}}"], "path": ["api", "auth", "demo", "citizen"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Emergencies & SOS",
+      "item": [
+        {
+          "name": "Report Emergency",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ACCIDENT\",\n  \"description\": \"Two vehicles collided at MG Road intersection. Multiple casualties, one unconscious.\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946,\n  \"address\": \"MG Road Junction, Metro Pillar 140\",\n  \"peopleAffected\": 3,\n  \"injuredCount\": 2,\n  \"unconscious\": true,\n  \"severeBleeding\": true,\n  \"fireInvolved\": false,\n  \"trapped\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/emergencies/report", "host": ["{{baseUrl}}"], "path": ["api", "emergencies", "report"] }
+          }
+        },
+        {
+          "name": "Trigger Instant SOS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946,\n  \"address\": \"Instant SOS GPS Coordinates\",\n  \"name\": \"Aarav Patel\",\n  \"phone\": \"98765-43210\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/emergencies/sos", "host": ["{{baseUrl}}"], "path": ["api", "emergencies", "sos"] }
+          }
+        },
+        {
+          "name": "Get Priority Triage Queue",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/emergencies/priority-queue", "host": ["{{baseUrl}}"], "path": ["api", "emergencies", "priority-queue"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Assistant & Summaries",
+      "item": [
+        {
+          "name": "AI Assistant Chat (Multilingual)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"There is a fire in apartment 402 with heavy smoke\",\n  \"conversationId\": \"conv-demo-1\",\n  \"language\": \"en\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/assistant/chat", "host": ["{{baseUrl}}"], "path": ["api", "assistant", "chat"] }
+          }
+        },
+        {
+          "name": "Get Dispatcher Incident Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assistant/dispatcher-summary/JS-2026-000184", "host": ["{{baseUrl}}"], "path": ["api", "assistant", "dispatcher-summary", "JS-2026-000184"] }
+          }
+        },
+        {
+          "name": "Smart Ambulance Recommendations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assistant/ambulances/recommend/JS-2026-000184", "host": ["{{baseUrl}}"], "path": ["api", "assistant", "ambulances", "recommend", "JS-2026-000184"] }
+          }
+        },
+        {
+          "name": "Smart Hospital Recommendations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assistant/hospitals/recommend/JS-2026-000184", "host": ["{{baseUrl}}"], "path": ["api", "assistant", "hospitals", "recommend", "JS-2026-000184"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Multi-Agency Tactical Comms",
+      "item": [
+        {
+          "name": "Post Tactical Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Traffic police clearing fast lane on Expressway for incoming ambulance AMB-104.\",\n  \"agencyType\": \"POLICE\",\n  \"priority\": \"URGENT\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/agency-comms/incident/JS-2026-000184", "host": ["{{baseUrl}}"], "path": ["api", "agency-comms", "incident", "JS-2026-000184"] }
+          }
+        },
+        {
+          "name": "Get Incident Communications Stream",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/agency-comms/incident/JS-2026-000184", "host": ["{{baseUrl}}"], "path": ["api", "agency-comms", "incident", "JS-2026-000184"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

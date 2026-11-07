@@ -12,6 +12,7 @@ services:
       - MONGO_INITDB_DATABASE=jeevansetu
     volumes:
       - mongo_data:/data/db
+      - ./database/init_mongo.js:/docker-entrypoint-initdb.d/init_mongo.js:ro
 
   # Python FastAPI AI Service
   ai-python:
