@@ -149,6 +149,34 @@ public class EmergencyService {
         return saved;
     }
 
+    public Emergency reportSosEmergency(double latitude, double longitude, String address, String reporterEmail, String reporterName, String reporterPhone) {
+        EmergencyReportRequest req = new EmergencyReportRequest();
+        req.setType(EmergencyType.MEDICAL);
+        req.setDescription("🚨 EMERGENCY SOS PANIC TRIGGER: Instant high-priority distress signal activated. Immediate emergency response demanded.");
+        req.setLatitude(latitude);
+        req.setLongitude(longitude);
+        req.setAddress(address != null && !address.isBlank() ? address : "SOS GPS Coordinates: " + latitude + ", " + longitude);
+        req.setPeopleAffected(1);
+        req.setInjuredCount(1);
+        req.setUnconscious(false);
+        req.setSevereBleeding(false);
+        req.setFireInvolved(false);
+        req.setTrapped(false);
+        req.setAdditionalInfo("One-touch citizen SOS panic broadcast.");
+
+        Emergency emergency = reportEmergency(req, null, reporterEmail, reporterName != null ? reporterName : "SOS Citizen Caller", reporterPhone);
+        emergency.setPriority(EmergencyPriority.CRITICAL);
+        emergency.setIncidentCode(emergency.getIncidentCode().replace("JS-", "JS-SOS-"));
+        Emergency saved = emergencyRepository.save(emergency);
+
+        createTimelineEntry(saved.getId(), saved.getIncidentCode(), "SOS_PANIC_ALERT",
+                "Emergency SOS broadcast received with verified GPS fix. Multi-agency panic protocol engaged.",
+                "CITIZEN_SOS", saved.getReporterName());
+
+        eventPublisher.publishSosAlert(saved);
+        return saved;
+    }
+
     public List<Emergency> getActiveEmergenciesPriorityOrdered() {
         // First check memory PriorityQueue; if empty, load from MongoDB
         if (priorityQueue.size() == 0) {

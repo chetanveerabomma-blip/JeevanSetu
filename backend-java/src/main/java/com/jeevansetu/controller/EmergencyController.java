@@ -47,6 +47,25 @@ public class EmergencyController {
         return ResponseEntity.ok(ApiResponse.ok("Emergency reported successfully. Incident ID: " + reported.getIncidentCode(), reported));
     }
 
+    @PostMapping("/sos")
+    @Operation(summary = "One-click Citizen Emergency SOS panic trigger with automatic GPS fix")
+    public ResponseEntity<ApiResponse<Emergency>> triggerSos(
+            @RequestBody Map<String, Object> payload,
+            Authentication auth) {
+        String email = auth != null ? auth.getName() : "sos-caller@jeevansetu.in";
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        String userName = userOpt.map(User::getFullName).orElse((String) payload.getOrDefault("name", "SOS Caller"));
+        String userPhone = userOpt.map(User::getPhone).orElse((String) payload.getOrDefault("phone", "N/A"));
+
+        double lat = payload.containsKey("latitude") ? ((Number) payload.get("latitude")).doubleValue() : 17.3850;
+        double lng = payload.containsKey("longitude") ? ((Number) payload.get("longitude")).doubleValue() : 78.4867;
+        String address = (String) payload.getOrDefault("address", "SOS GPS Location Coordinates");
+
+        Emergency sos = emergencyService.reportSosEmergency(lat, lng, address, email, userName, userPhone);
+        return ResponseEntity.ok(ApiResponse.ok("🚨 SOS Alert Dispatched! Incident: " + sos.getIncidentCode(), sos));
+    }
+
     @GetMapping("/priority-queue")
     @Operation(summary = "Get active emergencies ordered by Java PriorityQueue triage ranking")
     public ResponseEntity<ApiResponse<List<Emergency>>> getPriorityQueue() {

@@ -124,10 +124,33 @@ public class AIAssistantController {
         return ResponseEntity.ok(ApiResponse.ok("Chat history cleared", "SUCCESS"));
     }
 
+    @GetMapping("/dispatcher-summary/{incidentId}")
+    @Operation(summary = "Generate concise incident summary for dispatchers separating confirmed facts from uncertain info")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getDispatcherSummary(@PathVariable String incidentId) {
+        Map<String, Object> summary = assistantService.generateDispatcherSummary(incidentId);
+        return ResponseEntity.ok(ApiResponse.ok("Dispatcher incident summary generated", summary));
+    }
+
+    @GetMapping("/ambulances/recommend/{incidentId}")
+    @Operation(summary = "Smart ambulance recommendation with strict dispatcher confirmation policy")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAmbulanceRecommendations(@PathVariable String incidentId) {
+        Map<String, Object> recs = assistantService.getSmartAmbulanceRecommendation(incidentId);
+        return ResponseEntity.ok(ApiResponse.ok("Ambulance recommendations calculated", recs));
+    }
+
+    @GetMapping("/hospitals/recommend/{incidentId}")
+    @Operation(summary = "Smart hospital recommendation using real-time verified ICU/ER bed capacity and distance")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getHospitalRecommendations(@PathVariable String incidentId) {
+        Map<String, Object> recs = assistantService.getSmartHospitalRecommendation(incidentId);
+        return ResponseEntity.ok(ApiResponse.ok("Hospital recommendations calculated", recs));
+    }
+
     @GetMapping("/guidelines")
     @Operation(summary = "Get standard first aid and emergency guidelines")
-    public ResponseEntity<ApiResponse<String>> getGuidelines(@RequestParam(defaultValue = "ALL") String category) {
-        String guidelines = assistantService.getEmergencyGuidelinesContent(category);
+    public ResponseEntity<ApiResponse<String>> getGuidelines(
+            @RequestParam(defaultValue = "ALL") String category,
+            @RequestParam(defaultValue = "en") String lang) {
+        String guidelines = assistantService.getEmergencyGuidelinesContent(category, lang);
         return ResponseEntity.ok(ApiResponse.ok("Guidelines retrieved", guidelines));
     }
 }

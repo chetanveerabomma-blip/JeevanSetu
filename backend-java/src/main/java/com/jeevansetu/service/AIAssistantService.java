@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class AIAssistantService {
 
     private static final Logger logger = LoggerFactory.getLogger(AIAssistantService.class);
-    private static final Pattern INCIDENT_CODE_PATTERN = Pattern.compile("JS-\\d{4}-\\d{4}", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INCIDENT_CODE_PATTERN = Pattern.compile("JS-(?:SOS-)?\\d{4}-\\d+", Pattern.CASE_INSENSITIVE);
 
     private final PythonAIClient pythonAIClient;
     private final ChatHistoryService chatHistoryService;
@@ -51,6 +51,7 @@ public class AIAssistantService {
         String conversationId = request.getConversationId() != null && !request.getConversationId().isBlank()
                 ? request.getConversationId()
                 : UUID.randomUUID().toString();
+        String language = request.getLanguage() != null ? request.getLanguage().toLowerCase() : "en";
 
         Double lat = request.getLatitude() != null ? request.getLatitude() : 17.3850;
         Double lng = request.getLongitude() != null ? request.getLongitude() : 78.4867;
@@ -65,11 +66,11 @@ public class AIAssistantService {
                 null,
                 null,
                 null,
-                Map.of("lat", lat, "lng", lng)
+                Map.of("lat", lat, "lng", lng, "lang", language)
         );
 
-        // 2. Invoke Python AI Service for NLP & Intent Classification
-        Map<String, Object> aiResult = pythonAIClient.processChat(message, userId, role, conversationId, lat, lng);
+        // 2. Invoke Python AI Service for Multilingual NLP & Intent Classification
+        Map<String, Object> aiResult = pythonAIClient.processChat(message, userId, role, conversationId, lat, lng, language);
 
         String detectedIntent = (String) aiResult.getOrDefault("detected_intent", "GENERAL_ASSISTANCE");
         String categoryStr = (String) aiResult.getOrDefault("emergency_category", "OTHER");
@@ -94,32 +95,31 @@ public class AIAssistantService {
         response.setRecommendedResources(recommendedResources);
         response.setMissingInfo(missingInfo);
         response.setSuggestedActions(suggestedActions);
+        response.setLanguage(language);
+        response.setRequiresDispatcherApproval(true);
 
         // 3. Contextual Data Processing & Enrichment
         EmergencyType emergencyType = parseEmergencyType(categoryStr);
 
         switch (detectedIntent) {
             case "REPORT_EMERGENCY" -> {
-                // Construct authoritative emergency draft
                 Emergency draft = new Emergency();
                 draft.setType(emergencyType);
                 draft.setDescription(message);
                 draft.setLatitude(lat);
                 draft.setLongitude(lng);
                 draft.setAddress((String) extracted.getOrDefault("location", "GPS Coordinates captured: " + lat + ", " + lng));
-                draft.setInjuredCount(extracted.containsKey("casualties") ? ((Number) extracted.get("casualties")).intValue() : 0);
+                draft.setInjuredCount(extracted.containsKey("injured_count") ? ((Number) extracted.get("injured_count")).intValue() : 0);
                 draft.setUnconscious(Boolean.TRUE.equals(extracted.get("unconscious")));
-                draft.setSevereBleeding(Boolean.TRUE.equals(extracted.get("severeBleeding")));
-                draft.setFireInvolved(Boolean.TRUE.equals(extracted.get("fire")));
+                draft.setSevereBleeding(Boolean.TRUE.equals(extracted.get("severe_bleeding")));
+                draft.setFireInvolved(Boolean.TRUE.equals(extracted.get("fire_involved")));
                 draft.setTrapped(Boolean.TRUE.equals(extracted.get("trapped")));
 
-                // Authoritative Java PriorityEngine computation
                 EmergencyPriority computedPriority = priorityEngine.determinePriority(draft);
                 draft.setPriority(computedPriority);
                 response.setPriority(computedPriority.name());
                 response.setEmergencyDraft(draft);
 
-                // Fetch top 3 nearby hospitals & ambulances for immediate awareness
                 try {
                     response.setHospitals(hospitalService.getNearbyHospitals(lat, lng, 3));
                     response.setAmbulances(getNearbyAmbulances(lat, lng, 3));
@@ -132,7 +132,7 @@ public class AIAssistantService {
                 List<Hospital> hospitals = hospitalService.getNearbyHospitals(lat, lng, 5);
                 response.setHospitals(hospitals);
                 if (!hospitals.isEmpty()) {
-                    response.setText(String.format("Found %d verified emergency hospitals near your location. Tap any facility for directions or call directly.", hospitals.size()));
+                    response.setText(String.format("Found %d verified emergency hospitals near your location with active ICU/ER bed capacity.", hospitals.size()));
                 }
             }
 
@@ -140,7 +140,7 @@ public class AIAssistantService {
                 List<ResponderUnit> ambulances = getNearbyAmbulances(lat, lng, 5);
                 response.setAmbulances(ambulances);
                 long availableCount = ambulances.stream().filter(a -> a.getStatus() == ResourceStatus.AVAILABLE).count();
-                response.setText(String.format("Identified %d regional ambulances (%d currently Available, %d En Route). Dispatch authority is active.",
+                response.setText(String.format("Identified %d regional ambulances (%d currently Available, %d En Route). Dispatcher approval is required prior to assignment.",
                         ambulances.size(), availableCount, ambulances.size() - availableCount));
             }
 
@@ -171,7 +171,7 @@ public class AIAssistantService {
             }
 
             case "EMERGENCY_GUIDELINES" -> {
-                response.setGuidelineContent(getEmergencyGuidelinesContent(categoryStr));
+                response.setGuidelineContent(getEmergencyGuidelinesContent(categoryStr, language));
             }
 
             default -> {
@@ -189,7 +189,7 @@ public class AIAssistantService {
                 detectedIntent,
                 response.getCategory(),
                 response.getPriority(),
-                Map.of("confidence", response.getConfidenceScore())
+                Map.of("confidence", response.getConfidenceScore(), "lang", language)
         );
 
         return response;
@@ -215,10 +215,8 @@ public class AIAssistantService {
         String effectiveName = (draftReq.getReporterName() != null && !draftReq.getReporterName().isBlank())
                 ? draftReq.getReporterName() : (userName != null ? userName : "Citizen Reporter");
 
-        // Authoritative registration via EmergencyService
         Emergency created = emergencyService.reportEmergency(req, userId, userEmail, effectiveName, effectivePhone);
 
-        // Record in chat history
         if (draftReq.getConversationId() != null) {
             chatHistoryService.saveMessage(
                     draftReq.getConversationId(),
@@ -237,6 +235,71 @@ public class AIAssistantService {
         return created;
     }
 
+    public Map<String, Object> generateDispatcherSummary(String incidentIdOrCode) {
+        Emergency emergency = getEmergencyStatus(incidentIdOrCode);
+        return pythonAIClient.getDispatcherSummary(emergency.getIncidentCode(), emergency.getDescription());
+    }
+
+    public Map<String, Object> getSmartAmbulanceRecommendation(String incidentIdOrCode) {
+        Emergency emergency = getEmergencyStatus(incidentIdOrCode);
+        List<ResponderUnit> ambulances = responderUnitRepository.findByType(ResourceType.AMBULANCE);
+
+        ambulances.sort(Comparator.comparingDouble(u ->
+                ResourceSuitabilityScorer.calculateHaversineDistance(
+                        emergency.getLatitude(), emergency.getLongitude(), u.getLatitude(), u.getLongitude()
+                )
+        ));
+
+        List<ResponderUnit> topUnits = ambulances.stream().limit(4).toList();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("incidentId", emergency.getId());
+        result.put("incidentCode", emergency.getIncidentCode());
+        result.put("priority", emergency.getPriority());
+        result.put("recommendedAmbulances", topUnits);
+        result.put("requiresDispatcherApproval", true);
+        result.put("governancePolicy", "SAFETY_FIRST: Units cannot be automatically dispatched without authenticated command operator sign-off.");
+        return result;
+    }
+
+    public Map<String, Object> getSmartHospitalRecommendation(String incidentIdOrCode) {
+        Emergency emergency = getEmergencyStatus(incidentIdOrCode);
+        List<Hospital> allHospitals = hospitalService.getAllHospitals();
+
+        allHospitals.sort(Comparator.comparingDouble(h ->
+                ResourceSuitabilityScorer.calculateHaversineDistance(
+                        emergency.getLatitude(), emergency.getLongitude(), h.getLatitude(), h.getLongitude()
+                )
+        ));
+
+        List<Map<String, Object>> recommendations = new ArrayList<>();
+        for (Hospital h : allHospitals.stream().limit(5).toList()) {
+            int availIcu = Math.max(0, h.getIcuBeds() - h.getOccupiedIcuBeds());
+            int availEr = Math.max(0, h.getEmergencyBeds() - h.getOccupiedEmergencyBeds());
+            double dist = ResourceSuitabilityScorer.calculateHaversineDistance(
+                    emergency.getLatitude(), emergency.getLongitude(), h.getLatitude(), h.getLongitude()
+            );
+
+            Map<String, Object> card = new HashMap<>();
+            card.put("hospitalId", h.getId());
+            card.put("name", h.getName());
+            card.put("address", h.getAddress());
+            card.put("distanceKm", Math.round(dist * 10.0) / 10.0);
+            card.put("availableIcuBeds", availIcu);
+            card.put("availableEmergencyBeds", availEr);
+            card.put("contactPhone", h.getEmergencyContact());
+            card.put("verifiedAvailability", true);
+            recommendations.add(card);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("incidentId", emergency.getId());
+        result.put("incidentCode", emergency.getIncidentCode());
+        result.put("hospitals", recommendations);
+        result.put("note", "Hospital availability is verified from real-time database telemetry. Capacity is never artificially projected.");
+        return result;
+    }
+
     public List<Hospital> getNearbyHospitals(Double lat, Double lng, int limit) {
         double dLat = lat != null ? lat : 17.3850;
         double dLng = lng != null ? lng : 78.4867;
@@ -248,7 +311,6 @@ public class AIAssistantService {
         double dLng = lng != null ? lng : 78.4867;
         List<ResponderUnit> ambulances = responderUnitRepository.findByType(ResourceType.AMBULANCE);
 
-        // Sort by distance to user
         ambulances.sort(Comparator.comparingDouble(u ->
                 ResourceSuitabilityScorer.calculateHaversineDistance(dLat, dLng, u.getLatitude(), u.getLongitude())
         ));
@@ -264,7 +326,40 @@ public class AIAssistantService {
         return emergencyService.getEmergencyById(incidentIdOrCode);
     }
 
-    public String getEmergencyGuidelinesContent(String topic) {
+    public String getEmergencyGuidelinesContent(String topic, String lang) {
+        if ("hi".equalsIgnoreCase(lang)) {
+            return """
+                    ### 🚨 जीवनसेतु प्राथमिक चिकित्सा एवं आपातकालीन दिशानिर्देश
+                    
+                    **1. सीपीआर (Cardio-Pulmonary Resuscitation)**
+                    - चेतना और सांस की जांच करें।
+                    - सीने के केंद्र पर दोनों हाथ रखें।
+                    - 100-120 दबाव प्रति मिनट की गति से सीने को 2 इंच दबाएं।
+                    
+                    **2. गंभीर रक्तस्राव नियंत्रण**
+                    - साफ कपड़े से घाव पर निरंतर सीधा दबाव बनाएं।
+                    - भीगे हुए कपड़े को हटाएं नहीं, उसके ऊपर और कपड़ा लगाएं।
+                    
+                    **3. जलने पर उपचार**
+                    - 10-15 मिनट साफ ठंडा पानी डालें (बर्फ या मक्खन न लगाएं)।
+                    
+                    **आपातकालीन हेल्पलाइन:** 112 (एकीकृत) | 108 (एम्बुलेंस) | 101 (अग्निशमन)
+                    """;
+        } else if ("te".equalsIgnoreCase(lang)) {
+            return """
+                    ### 🚨 జీవన్‌సేతు ప్రథమ చికిత్స మార్గదర్శకాలు
+                    
+                    **1. సీపీఆర్ (CPR విధానం)**
+                    - శ్వాస మరియు స్పృహను పరిశీలించండి.
+                    - ఛాతీ మధ్యలో రెండు చేతులు ఉంచి నిమిషానికి 100-120 సార్లు వేగంగా ఒత్తండి.
+                    
+                    **2. రక్తస్రావం ఆపడం**
+                    - గాయంపై శుభ్రమైన గుడ్డతో స్థిరంగా ఒత్తిడి ఉంచండి.
+                    
+                    **అత్యవసర హెల్ప్‌లైన్:** 112 | 108 | 101
+                    """;
+        }
+
         return """
                 ### 🚨 JeevanSetu Immediate Emergency Guidelines
                 

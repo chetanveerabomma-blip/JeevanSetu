@@ -9,6 +9,7 @@ public class ChatRequest {
     private Double longitude;
     private String userId;
     private String role;
+    private String language = "en"; // "en", "hi", "te", "ta"
     private Map<String, Object> context;
 
     public ChatRequest() {}
@@ -37,6 +38,9 @@ public class ChatRequest {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
 
     public Map<String, Object> getContext() { return context; }
     public void setContext(Map<String, Object> context) { this.context = context; }

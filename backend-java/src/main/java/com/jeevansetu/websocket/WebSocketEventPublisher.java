@@ -42,6 +42,18 @@ public class WebSocketEventPublisher {
         publishEvent("/topic/notifications", "NOTIFICATION", notification);
     }
 
+    public void publishAgencyMessage(String incidentId, Object message) {
+        publishEvent("/topic/agency-comms", "AGENCY_MESSAGE", message);
+        if (incidentId != null && !incidentId.isBlank()) {
+            publishEvent("/topic/incidents/" + incidentId + "/comms", "AGENCY_MESSAGE", message);
+        }
+    }
+
+    public void publishSosAlert(Object sosAlert) {
+        publishEvent("/topic/sos-alerts", "SOS_ALERT", sosAlert);
+        publishEvent("/topic/emergencies", "EMERGENCY_CREATED", sosAlert);
+    }
+
     private void publishEvent(String destination, String eventType, Object payload) {
         try {
             Map<String, Object> message = new HashMap<>();

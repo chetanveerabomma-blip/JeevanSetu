@@ -6,11 +6,11 @@ from typing import List, Optional, Dict, Any
 from config import config
 from intent_classifier import classify_intent
 from emergency_classifier import classify_emergency
-from response_generator import generate_response
+from response_generator import generate_response, generate_dispatcher_summary
 
 app = FastAPI(
     title=config.SERVICE_NAME,
-    description="Emergency NLP, Intent Classification, and Assistant Response Generation for JeevanSetu",
+    description="Multilingual Emergency NLP, Intent Classification, and Assistant Response Generation for JeevanSetu",
     version=config.VERSION
 )
 
@@ -29,6 +29,7 @@ class ChatRequest(BaseModel):
     role: Optional[str] = None
     conversationId: Optional[str] = None
     currentLocation: Optional[Dict[str, float]] = None
+    language: Optional[str] = "en"
 
 class IntentClassificationRequest(BaseModel):
     text: str
@@ -42,12 +43,17 @@ class SummarizeRequest(BaseModel):
     injuredCount: Optional[int] = 0
     unconscious: Optional[bool] = False
 
+class DispatcherSummaryRequest(BaseModel):
+    incidentCode: Optional[str] = "INCIDENT"
+    description: str
+
 @app.get("/health")
 def health_check():
     return {
         "status": "HEALTHY",
         "service": config.SERVICE_NAME,
-        "version": config.VERSION
+        "version": config.VERSION,
+        "supported_languages": ["en", "hi", "te", "ta"]
     }
 
 @app.post("/ai/classify-intent")
@@ -69,14 +75,16 @@ def api_chat(req: ChatRequest):
     if not msg:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
+    lang = (req.language or "en").lower()
+
     # 1. Intent Detection
     intent, intent_conf = classify_intent(msg)
 
     # 2. Emergency Classification & Entity Extraction
     emergency_info = classify_emergency(msg)
 
-    # 3. Response & Actions Generation
-    response_payload = generate_response(intent, emergency_info, msg)
+    # 3. Response & Actions Generation (Localized)
+    response_payload = generate_response(intent, emergency_info, msg, lang=lang)
 
     return {
         "detected_intent": intent,
@@ -88,8 +96,15 @@ def api_chat(req: ChatRequest):
         "recommended_resources": emergency_info["recommended_resources"],
         "missing_info": emergency_info["missing_info"],
         "suggested_response": response_payload["text"],
-        "suggested_actions": response_payload["suggested_actions"]
+        "suggested_actions": response_payload["suggested_actions"],
+        "language": lang
     }
+
+@app.post("/ai/dispatcher-summary")
+def api_dispatcher_summary(req: DispatcherSummaryRequest):
+    emergency_info = classify_emergency(req.description)
+    summary = generate_dispatcher_summary(req.description, emergency_info, req.incidentCode or "INCIDENT")
+    return summary
 
 @app.post("/ai/summarize-incident")
 def api_summarize_incident(req: SummarizeRequest):

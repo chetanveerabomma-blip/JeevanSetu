@@ -12,6 +12,7 @@ public class AssistantResponse {
     private String category;
     private String priority;
     private double confidenceScore;
+    private String language = "en";
     private Map<String, Object> extractedInfo = new HashMap<>();
     private List<String> recommendedResources = new ArrayList<>();
     private List<String> missingInfo = new ArrayList<>();
@@ -23,6 +24,8 @@ public class AssistantResponse {
     private List<ResponderUnit> ambulances = new ArrayList<>();
     private Emergency incidentStatus;
     private String guidelineContent;
+    private Map<String, Object> dispatcherSummary = new HashMap<>();
+    private boolean requiresDispatcherApproval = true;
     private Instant timestamp = Instant.now();
 
     public AssistantResponse() {}
@@ -47,6 +50,9 @@ public class AssistantResponse {
 
     public double getConfidenceScore() { return confidenceScore; }
     public void setConfidenceScore(double confidenceScore) { this.confidenceScore = confidenceScore; }
+
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
 
     public Map<String, Object> getExtractedInfo() { return extractedInfo; }
     public void setExtractedInfo(Map<String, Object> extractedInfo) { this.extractedInfo = extractedInfo; }
@@ -74,6 +80,12 @@ public class AssistantResponse {
 
     public String getGuidelineContent() { return guidelineContent; }
     public void setGuidelineContent(String guidelineContent) { this.guidelineContent = guidelineContent; }
+
+    public Map<String, Object> getDispatcherSummary() { return dispatcherSummary; }
+    public void setDispatcherSummary(Map<String, Object> dispatcherSummary) { this.dispatcherSummary = dispatcherSummary; }
+
+    public boolean isRequiresDispatcherApproval() { return requiresDispatcherApproval; }
+    public void setRequiresDispatcherApproval(boolean requiresDispatcherApproval) { this.requiresDispatcherApproval = requiresDispatcherApproval; }
 
     public Instant getTimestamp() { return timestamp; }
     public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }

@@ -140,6 +140,10 @@
           <button onclick="zoomToSelected()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
             Center Map
           </button>
+          <a id="sel-summary-btn" href="#" onclick="openDispatcherSummaryFromCommand(event)" class="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white flex items-center gap-1">
+            <i class="fa-solid fa-robot"></i>
+            <span>AI Summary</span>
+          </a>
           <a id="sel-link" href="#" class="btn-emergency px-3.5 py-1.5 rounded text-xs font-bold flex items-center gap-1">
             <span>Incident Room</span>
             <i class="fa-solid fa-arrow-right text-[10px]"></i>
@@ -515,6 +519,69 @@
         });
       });
     }
+
+    async function openDispatcherSummaryFromCommand(e) {
+      if (e) e.preventDefault();
+      if (!selectedIncident) return;
+      const modal = document.getElementById('cmdSummaryModal');
+      modal.classList.add('active');
+
+      try {
+        const summary = await API.request(`/assistant/dispatcher-summary/${selectedIncident.id || selectedIncident.incidentCode}`);
+        if (summary) {
+          document.getElementById('cmd-sum-original').innerText = summary.original_report || selectedIncident.description || 'N/A';
+          document.getElementById('cmd-sum-confirmed').innerHTML = (summary.confirmed_facts || []).map(f => `<li>${f}</li>`).join('') || '<li>Verified via GPS Coordinates</li>';
+          document.getElementById('cmd-sum-uncertain').innerHTML = (summary.uncertain_information || []).map(u => `<li>${u}</li>`).join('') || '<li>None</li>';
+          document.getElementById('cmd-sum-triage').innerText = summary.triage_summary || 'Triage summary ready.';
+        }
+      } catch (err) {
+        console.error('Summary error', err);
+      }
+    }
+
+    function closeCmdSummaryModal() {
+      document.getElementById('cmdSummaryModal').classList.remove('active');
+    }
   </script>
+
+  <!-- AI Dispatcher Summary Modal -->
+  <div class="js-ai-summary-modal" id="cmdSummaryModal">
+    <div class="js-ai-summary-content">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-robot text-sky-400"></i>
+          <span>AI Dispatcher Incident Summary</span>
+        </h3>
+        <button onclick="closeCmdSummaryModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Original Caller Narrative</div>
+          <div id="cmd-sum-original" class="p-2.5 rounded bg-slate-900 text-slate-300 italic border border-slate-800"></div>
+        </div>
+
+        <div>
+          <div class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Confirmed Extracted Facts</span>
+          </div>
+          <ul id="cmd-sum-confirmed" class="list-disc pl-4 space-y-1 text-slate-200"></ul>
+        </div>
+
+        <div>
+          <div class="text-[10px] text-amber-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Uncertain Information (Requires On-Scene Verification)</span>
+          </div>
+          <ul id="cmd-sum-uncertain" class="list-disc pl-4 space-y-1 text-slate-400"></ul>
+        </div>
+
+        <div class="p-3 rounded-lg bg-sky-950/40 border border-sky-800/40 text-sky-200" id="cmd-sum-triage"></div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
