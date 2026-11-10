@@ -36,9 +36,17 @@
       <a href="bloodbank.html" class="hover:text-red-400 transition flex items-center gap-1"><i class="fa-solid fa-droplet"></i> Blood Bank</a>
       <a href="volunteer-shelter.html" class="hover:text-amber-400 transition flex items-center gap-1"><i class="fa-solid fa-person-shelter"></i> Shelters</a>
       <a href="analytics.html" class="hover:text-blue-400 transition flex items-center gap-1"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+      <a href="admin.html" class="hover:text-purple-400 transition flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Admin Grid</a>
     </div>
 
     <div class="flex items-center space-x-3">
+      <!-- Language Switcher -->
+      <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-slate-700 outline-none">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+      </select>
       <div class="text-right hidden sm:block">
         <div class="text-xs font-bold text-white mono" id="commander-name">Officer Ananya Sharma</div>
         <div class="text-[10px] text-cyan-400">Tactical Dispatcher</div>
@@ -125,28 +133,63 @@
       </div>
 
       <!-- Selected Incident Quick Bar -->
-      <div id="selected-incident-bar" class="hidden absolute bottom-4 left-4 right-4 z-[400] bg-slate-900/95 backdrop-blur border border-red-500/50 rounded-xl p-3 flex items-center justify-between shadow-2xl">
+      <div id="selected-incident-bar" class="hidden absolute bottom-4 left-4 right-4 z-[400] bg-slate-900/95 backdrop-blur border border-red-500/50 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-2xl">
         <div class="flex items-center gap-3">
           <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
           <div>
-            <div class="text-xs font-bold text-white flex items-center gap-2">
+            <div class="text-xs font-bold text-white flex items-center gap-2 flex-wrap">
               <span id="sel-code" class="mono">JS-2026-000184</span>
               <span id="sel-badge" class="px-2 py-0.5 rounded text-[10px] font-bold badge-critical">CRITICAL</span>
+              <span id="sel-agency-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-900/50 text-blue-300 border border-blue-700 hidden"></span>
+              <span id="sel-escalated-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-600 hidden">ESCALATED</span>
+              <span id="sel-duplicate-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-600 hidden cursor-pointer" onclick="alert('Duplicate warning: Incident matches nearby report within 500m.')">⚠️ DUPLICATE MATCH</span>
             </div>
             <div id="sel-desc" class="text-[11px] text-slate-400">Road Accident • 2 injured, 1 unconscious</div>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="zoomToSelected()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
-            Center Map
+
+        <!-- Tactical Actions: Agency, Escalation, Chat, Details -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <!-- Agency Selector -->
+          <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
+            <select id="sel-agency-choice" class="bg-slate-900 text-[11px] text-slate-200 rounded px-1.5 py-1 border border-slate-700 outline-none">
+              <option value="POLICE">Police</option>
+              <option value="FIRE_UNIT">Fire Dept</option>
+              <option value="AMBULANCE" selected>EMS / Amb</option>
+              <option value="NDRF">NDRF</option>
+              <option value="HOSPITAL">Trauma ER</option>
+            </select>
+            <button onclick="assignAgencyToSelected()" class="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-[10px] font-bold text-white transition">
+              Assign
+            </button>
+          </div>
+
+          <!-- Escalation Controls -->
+          <button id="btn-escalate" onclick="escalateSelected()" class="px-2.5 py-1.5 rounded bg-amber-700 hover:bg-amber-600 text-[10px] font-bold text-white flex items-center gap-1">
+            <i class="fa-solid fa-arrow-up-right-dots"></i>
+            <span>Escalate</span>
           </button>
-          <a id="sel-summary-btn" href="#" onclick="openDispatcherSummaryFromCommand(event)" class="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white flex items-center gap-1">
+          <button id="btn-ack-escalate" onclick="ackEscalationSelected()" class="hidden px-2.5 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-[10px] font-bold text-white flex items-center gap-1">
+            <i class="fa-solid fa-check-double"></i>
+            <span>Ack Escalation</span>
+          </button>
+
+          <!-- Incident Chat -->
+          <button onclick="openTacticalChat()" class="px-2.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-bold text-white flex items-center gap-1">
+            <i class="fa-solid fa-comments"></i>
+            <span>Comms</span>
+          </button>
+
+          <button onclick="zoomToSelected()" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-semibold text-slate-300">
+            Center
+          </button>
+          <a id="sel-summary-btn" href="#" onclick="openDispatcherSummaryFromCommand(event)" class="px-2.5 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-[10px] font-bold text-white flex items-center gap-1">
             <i class="fa-solid fa-robot"></i>
             <span>AI Summary</span>
           </a>
-          <a id="sel-link" href="#" class="btn-emergency px-3.5 py-1.5 rounded text-xs font-bold flex items-center gap-1">
-            <span>Incident Room</span>
-            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          <a id="sel-link" href="#" class="btn-emergency px-3 py-1.5 rounded text-[10px] font-bold flex items-center gap-1">
+            <span>Room</span>
+            <i class="fa-solid fa-arrow-right text-[9px]"></i>
           </a>
         </div>
       </div>
@@ -189,6 +232,7 @@
   </div>
 
   <script src="js/api.js"></script>
+  <script src="js/offline-sync.js"></script>
   <script src="js/websocket.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/chatbot.js"></script>
@@ -384,6 +428,34 @@
       document.getElementById('sel-desc').innerText = `${selectedIncident.type} • ${selectedIncident.injuredCount || 0} injured • ${selectedIncident.address}`;
       document.getElementById('sel-link').href = `incident-detail.html?id=${selectedIncident.id}`;
 
+      // Update Agency & Escalation Badges
+      const agencyBadge = document.getElementById('sel-agency-badge');
+      if (selectedIncident.assignedAgency) {
+        agencyBadge.innerText = `AGENCY: ${selectedIncident.assignedAgency}`;
+        agencyBadge.classList.remove('hidden');
+        document.getElementById('sel-agency-choice').value = selectedIncident.assignedAgency;
+      } else {
+        agencyBadge.classList.add('hidden');
+      }
+
+      const escBadge = document.getElementById('sel-escalated-badge');
+      const ackBtn = document.getElementById('btn-ack-escalate');
+      if (selectedIncident.escalated) {
+        escBadge.classList.remove('hidden');
+        escBadge.innerText = `ESCALATED (LVL ${selectedIncident.escalationLevel || 1})`;
+        if (!selectedIncident.escalationAcknowledged) {
+          ackBtn.classList.remove('hidden');
+        } else {
+          ackBtn.classList.add('hidden');
+        }
+      } else {
+        escBadge.classList.add('hidden');
+        ackBtn.classList.add('hidden');
+      }
+
+      // Check Duplicates Asynchronously
+      checkDuplicatesForSelected(selectedIncident);
+
       // Update Scorer Header
       document.getElementById('scorer-headline').innerText = `Scoring units for ${selectedIncident.incidentCode}`;
       document.getElementById('scorer-sub').innerText = `Triage: ${selectedIncident.priority} • Required: ${(selectedIncident.requiredResources || ['AMBULANCE']).join(', ')}`;
@@ -398,6 +470,125 @@
 
       // Re-render queue to highlight selected
       loadPriorityQueue();
+    }
+
+    async function checkDuplicatesForSelected(incident) {
+      const dupBadge = document.getElementById('sel-duplicate-badge');
+      try {
+        const result = await API.request('/emergencies/check-duplicate', {
+          method: 'POST',
+          body: JSON.stringify({
+            latitude: incident.latitude,
+            longitude: incident.longitude,
+            category: incident.type,
+            description: incident.description,
+            timeWindowMinutes: 60
+          })
+        });
+        if (result && result.duplicateSuspected && result.matchedIncidentCode !== incident.incidentCode) {
+          dupBadge.classList.remove('hidden');
+          dupBadge.title = result.explanation || 'Matches active nearby emergency';
+          dupBadge.innerText = `⚠️ DUPLICATE MATCH (${result.matchedIncidentCode})`;
+        } else {
+          dupBadge.classList.add('hidden');
+        }
+      } catch (e) {
+        dupBadge.classList.add('hidden');
+      }
+    }
+
+    async function assignAgencyToSelected() {
+      if (!selectedIncident) return;
+      const agency = document.getElementById('sel-agency-choice').value;
+      const remarks = prompt(`Enter dispatcher remarks for assigning ${agency}:`, `Dispatched for immediate tactical on-scene support`);
+      if (remarks === null) return;
+
+      try {
+        await API.request(`/command/${selectedIncident.id}/assign-agency`, {
+          method: 'POST',
+          body: JSON.stringify({ agency: agency, remarks: remarks })
+        });
+        addTickerEvent(`AGENCY ASSIGNED: ${agency} assigned to incident ${selectedIncident.incidentCode}`);
+        alert(`Incident assigned to ${agency}. Tactical alert broadcasted.`);
+        await refreshAll();
+      } catch (e) {
+        alert('Failed to assign agency: ' + e.message);
+      }
+    }
+
+    async function escalateSelected() {
+      if (!selectedIncident) return;
+      if (!confirm(`Are you sure you want to escalate incident ${selectedIncident.incidentCode} to higher command authority?`)) return;
+
+      try {
+        await API.request(`/command/${selectedIncident.id}/escalate`, { method: 'POST' });
+        addTickerEvent(`ESCALATION: Incident ${selectedIncident.incidentCode} escalated by dispatcher.`);
+        alert(`Incident ${selectedIncident.incidentCode} escalated successfully.`);
+        await refreshAll();
+      } catch (e) {
+        alert('Escalation failed: ' + e.message);
+      }
+    }
+
+    async function ackEscalationSelected() {
+      if (!selectedIncident) return;
+      try {
+        await API.request(`/command/${selectedIncident.id}/acknowledge-escalation`, { method: 'POST' });
+        addTickerEvent(`ACKNOWLEDGED: Escalation for ${selectedIncident.incidentCode} acknowledged.`);
+        alert(`Escalation acknowledged.`);
+        await refreshAll();
+      } catch (e) {
+        alert('Acknowledgement failed: ' + e.message);
+      }
+    }
+
+    // Tactical Chat
+    async function openTacticalChat() {
+      if (!selectedIncident) return;
+      document.getElementById('cmdChatModal').classList.add('active');
+      document.getElementById('chat-incident-title').innerText = `${selectedIncident.incidentCode} - Tactical Channel`;
+      await loadTacticalMessages();
+    }
+
+    function closeTacticalChat() {
+      document.getElementById('cmdChatModal').classList.remove('active');
+    }
+
+    async function loadTacticalMessages() {
+      if (!selectedIncident) return;
+      const box = document.getElementById('chat-messages-container');
+      try {
+        const msgs = await API.request(`/incident-chat/${selectedIncident.id}`);
+        box.innerHTML = (msgs || []).map(m => `
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="font-bold text-white">${m.senderName} (${m.senderRole || m.senderAgency})</span>
+              <span class="text-slate-500 mono">${new Date(m.createdAt || Date.now()).toLocaleTimeString()}</span>
+            </div>
+            <div class="text-xs text-slate-300">${m.message}</div>
+          </div>
+        `).join('') || '<div class="text-xs text-slate-500 text-center py-4">No tactical transmissions yet.</div>';
+        box.scrollTop = box.scrollHeight;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function sendTacticalMessage() {
+      if (!selectedIncident) return;
+      const input = document.getElementById('chat-input-text');
+      const text = input.value.trim();
+      if (!text) return;
+      try {
+        await API.request(`/incident-chat/${selectedIncident.id}`, {
+          method: 'POST',
+          body: JSON.stringify({ message: text, priority: 'NORMAL' })
+        });
+        input.value = '';
+        await loadTacticalMessages();
+      } catch (e) {
+        alert('Transmission failed: ' + e.message);
+      }
     }
 
     async function loadScoredUnits(incidentId) {
@@ -581,6 +772,33 @@
         </div>
 
         <div class="p-3 rounded-lg bg-sky-950/40 border border-sky-800/40 text-sky-200" id="cmd-sum-triage"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tactical Incident Chat Modal -->
+  <div class="js-ai-summary-modal" id="cmdChatModal">
+    <div class="js-ai-summary-content" style="max-width: 600px;">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-headset text-indigo-400"></i>
+          <span id="chat-incident-title">Incident Tactical Comms</span>
+        </h3>
+        <button onclick="closeTacticalChat()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Messages container -->
+      <div id="chat-messages-container" class="space-y-2 h-72 overflow-y-auto p-2 bg-slate-950/60 rounded-xl border border-slate-800 mb-3"></div>
+
+      <!-- Input box -->
+      <div class="flex items-center gap-2">
+        <input type="text" id="chat-input-text" placeholder="Type tactical directive..." onkeydown="if(event.key==='Enter') sendTacticalMessage()" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-indigo-500">
+        <button onclick="sendTacticalMessage()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition flex items-center gap-1">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Transmit</span>
+        </button>
       </div>
     </div>
   </div>

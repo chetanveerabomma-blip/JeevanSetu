@@ -26,11 +26,22 @@
       <span class="hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-900/40 text-blue-400 border border-blue-700/50">CITIZEN PORTAL</span>
     </div>
 
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-3">
+      <!-- Language Switcher -->
+      <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-slate-700 outline-none">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+      </select>
       <div class="text-right hidden sm:block">
         <div class="text-xs font-bold text-white" id="user-display-name">Aarav Patel</div>
         <div class="text-[10px] text-slate-400">Citizen Reporter</div>
       </div>
+      <button onclick="startVoiceEmergencyReport()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow" title="Report Emergency using Voice">
+        <i class="fa-solid fa-microphone animate-pulse text-red-300"></i>
+        <span class="hidden md:inline">Voice Report</span>
+      </button>
       <button onclick="openEmergencyModal()" class="btn-emergency px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
         <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
         <span>REPORT EMERGENCY</span>
@@ -303,13 +314,28 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Description / Observations</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-semibold text-slate-400">Description / Observations</label>
+              <button type="button" onclick="startVoiceDictation('report-desc')" class="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-microphone"></i>
+                <span>Speak Description</span>
+              </button>
+            </div>
             <textarea id="report-desc" rows="3" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-blue-500" placeholder="Describe the scene, vehicle types, or patient condition...">Two-vehicle collision with passenger trapped in rear seat. Severe bleeding observed and one passenger unresponsive.</textarea>
           </div>
         </div>
 
         <!-- STEP 4: Review & Live Confirmation -->
         <div id="step-4" class="hidden space-y-4">
+          <!-- Duplicate Warning Banner if Detected -->
+          <div id="duplicate-warning-banner" class="hidden p-3 rounded-lg bg-amber-950/60 border border-amber-500 text-xs text-amber-200 flex items-start gap-2.5">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm mt-0.5"></i>
+            <div>
+              <div class="font-bold text-white" id="dup-warning-title">Nearby Active Emergency Detected</div>
+              <div class="text-[11px] text-amber-300/90 mt-0.5" id="dup-warning-desc">An incident has already been reported near this location within the past hour. You may proceed if this is a separate incident.</div>
+            </div>
+          </div>
+
           <div id="review-pre-submit" class="space-y-3 text-xs">
             <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 flex justify-between items-center">
               <span class="text-slate-400">Emergency Type:</span>
@@ -369,6 +395,7 @@
   </div>
 
   <script src="js/api.js"></script>
+  <script src="js/offline-sync.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/chatbot.js"></script>
   <script>
@@ -406,7 +433,7 @@
       loadActiveIncidents();
     }
 
-    function goToStep(step) {
+    async function goToStep(step) {
       currentStep = step;
       for (let i = 1; i <= 4; i++) {
         document.getElementById(`step-${i}`).classList.add('hidden');
@@ -427,6 +454,98 @@
       if (step === 3) {
         document.getElementById('btn-submit').classList.remove('hidden');
       }
+      if (step === 4) {
+        // Run duplicate detection check before submission
+        checkDuplicateOnReview();
+      }
+    }
+
+    async function checkDuplicateOnReview() {
+      const banner = document.getElementById('duplicate-warning-banner');
+      banner.classList.add('hidden');
+      try {
+        const lat = parseFloat(document.getElementById('report-lat').value) || defaultLat;
+        const lng = parseFloat(document.getElementById('report-lng').value) || defaultLng;
+        const result = await API.request('/emergencies/check-duplicate', {
+          method: 'POST',
+          body: JSON.stringify({
+            latitude: lat,
+            longitude: lng,
+            category: selectedCat,
+            description: document.getElementById('report-desc').value,
+            timeWindowMinutes: 60
+          })
+        });
+        if (result && result.duplicateSuspected) {
+          banner.classList.remove('hidden');
+          document.getElementById('dup-warning-title').innerText = `⚠️ Similar Emergency Detected (${result.matchedIncidentCode || 'Nearby'})`;
+          document.getElementById('dup-warning-desc').innerText = `${result.explanation || 'An incident was reported nearby within 500m'}. Dispatchers have been alerted. You can still confirm to file a complementary report.`;
+        }
+      } catch (e) {
+        // Continue silently
+      }
+    }
+
+    function startVoiceDictation(targetId) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice dictation is not supported by your browser. Please use Google Chrome or Edge.');
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      const lang = localStorage.getItem('jeevansetu_lang') || 'en';
+      const langMap = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN' };
+      recognition.lang = langMap[lang] || 'en-IN';
+      recognition.interimResults = false;
+
+      const target = document.getElementById(targetId);
+      const originalPlaceholder = target.placeholder;
+      target.placeholder = '🎙️ Listening... Please speak now...';
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        target.value = (target.value ? target.value + ' ' : '') + transcript;
+        target.placeholder = originalPlaceholder;
+      };
+
+      recognition.onerror = () => {
+        target.placeholder = originalPlaceholder;
+      };
+
+      recognition.start();
+    }
+
+    function startVoiceEmergencyReport() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice Recognition is not supported by this browser. Opening report form.');
+        openEmergencyModal();
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      const lang = localStorage.getItem('jeevansetu_lang') || 'en';
+      const langMap = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', ta: 'ta-IN' };
+      recognition.lang = langMap[lang] || 'en-IN';
+
+      alert('🎙️ Speak your emergency report clearly (e.g. "Severe accident near MG Road junction with injuries")');
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript;
+        openEmergencyModal();
+        document.getElementById('report-desc').value = spoken;
+        // Basic NLP category detection from voice
+        const lower = spoken.toLowerCase();
+        if (lower.includes('fire')) selectCategory('FIRE', 'Active Fire Incident');
+        else if (lower.includes('heart') || lower.includes('breathing') || lower.includes('sick')) selectCategory('MEDICAL', 'Medical Emergency');
+        else selectCategory('ACCIDENT', 'Road Accident');
+
+        if (confirm(`Voice captured:\n"${spoken}"\n\nProceed with this emergency report?`)) {
+          goToStep(2);
+        }
+      };
+
+      recognition.start();
     }
 
     function nextStep() {
@@ -513,6 +632,19 @@
         trapped: document.getElementById('check-trapped').checked,
         fireInvolved: document.getElementById('check-fire').checked
       };
+
+      if (!navigator.onLine && window.OfflineSync) {
+        window.OfflineSync.saveReportOffline(data);
+        document.getElementById('review-pre-submit').classList.add('hidden');
+        document.getElementById('submit-result-card').classList.remove('hidden');
+        document.getElementById('res-incident-id').innerText = 'OFFLINE-QUEUED';
+        document.getElementById('res-priority').innerText = 'QUEUED FOR SYNC';
+        document.getElementById('res-status').innerText = 'STORED LOCALLY';
+        document.getElementById('btn-done').classList.remove('hidden');
+        document.getElementById('btn-prev').classList.add('hidden');
+        document.getElementById('btn-submit').classList.add('hidden');
+        return;
+      }
 
       try {
         const result = await API.request('/emergencies/report', {
