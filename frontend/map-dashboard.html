@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real Tactical Map Dashboard — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <style>
+    #main-map { height: 100%; width: 100%; z-index: 10; }
+    .custom-div-icon { background: transparent; border: none; }
+  </style>
+</head>
+<body class="bg-[#090e1a] text-slate-100 min-h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-[#060a14] px-4 py-2.5 flex items-center justify-between z-30">
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white text-base shadow-lg shadow-red-600/30">
+          <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+        <span class="text-lg font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <span class="text-xs font-bold text-cyan-400 border-l border-slate-700 pl-3 uppercase tracking-wider">GEOSPATIAL COMMAND MAP</span>
+      <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-[10px] font-bold text-emerald-400">
+        <span class="pulse-dot"></span>
+        <span>OSM TACTICAL TILES LOADED</span>
+      </div>
+    </div>
+
+    <!-- Portal Navigation -->
+    <div class="hidden lg:flex items-center space-x-4 text-xs font-semibold text-slate-400">
+      <a href="command-center.html" class="hover:text-cyan-400 transition flex items-center gap-1"><i class="fa-solid fa-satellite-dish"></i> Command Center</a>
+      <a href="evacuation-planner.html" class="hover:text-amber-400 transition flex items-center gap-1"><i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Evacuation</a>
+      <a href="family-reunification.html" class="hover:text-emerald-400 transition flex items-center gap-1"><i class="fa-solid fa-people-roof"></i> Reunification</a>
+      <a href="public-safety.html" class="hover:text-orange-400 transition flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Public Safety</a>
+      <a href="simulation-lab.html" class="hover:text-purple-400 transition flex items-center gap-1"><i class="fa-solid fa-flask-vial"></i> Simulation Lab</a>
+      <a href="admin.html" class="hover:text-indigo-400 transition flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Admin Grid</a>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <!-- Language Switcher -->
+      <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-slate-700 outline-none">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+      </select>
+      <button onclick="locateUserPosition()" class="px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 shadow" title="Detect GPS Location">
+        <i class="fa-solid fa-crosshairs"></i>
+        <span class="hidden sm:inline">Locate Me</span>
+      </button>
+      <button onclick="refreshMapData()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs" title="Refresh Telemetry">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+      <button onclick="API.logout()" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-red-400 text-xs" title="Sign Out">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Map Grid Layout -->
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden relative">
+
+    <!-- LEFT PANEL: Search & Layer Filters (3 cols) -->
+    <div class="lg:col-span-3 border-r border-slate-800 bg-[#0a0f1e] flex flex-col h-full overflow-hidden z-20">
+      
+      <!-- Geocoding Search Bar -->
+      <div class="p-3 border-b border-slate-800 bg-slate-900/60">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <span>Search Locations & Landmarks</span>
+          <span class="mono text-cyan-400 text-[9px]">OSM Nominatim</span>
+        </div>
+        <div class="relative">
+          <input type="text" id="map-search-input" placeholder="Search city, hospital, road..."
+            onkeydown="if(event.key==='Enter') executeLocationSearch()"
+            class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-8 py-2 text-xs text-white outline-none focus:border-cyan-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-500 text-xs"></i>
+          <button onclick="executeLocationSearch()" class="absolute right-2 top-2 text-cyan-400 hover:text-white text-xs">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+        <div id="search-results-list" class="hidden mt-2 p-1 bg-slate-950 border border-slate-800 rounded-lg max-h-40 overflow-y-auto space-y-1 text-xs"></div>
+      </div>
+
+      <!-- Layer Visibility Toggles -->
+      <div class="p-3 border-b border-slate-800 bg-[#0d1426] space-y-2">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Interactive Map Layers</div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <input type="checkbox" id="layer-incidents" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-red-500">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Incidents</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <input type="checkbox" id="layer-ambulances" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-sky-400">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Ambulances</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <input type="checkbox" id="layer-hospitals" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-emerald-400">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Hospitals</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <input type="checkbox" id="layer-shelters" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-amber-400">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Safe Havens</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <input type="checkbox" id="layer-zones" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-purple-400">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span> Hazard Zones</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+            <input type="checkbox" id="layer-blocks" checked onchange="toggleLayers()" class="rounded bg-slate-800 text-orange-500">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Blocked Roads</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Quick Route Calculator Widget -->
+      <div class="p-3 border-b border-slate-800 bg-slate-900/40 space-y-2">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+          <span>OSRM Route Calculator</span>
+          <span class="text-cyan-400 font-mono text-[9px]">Road Network</span>
+        </div>
+        <div class="space-y-1.5 text-xs">
+          <input type="text" id="route-start-display" placeholder="Start: Click map or use GPS" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-300 text-[11px]" readonly>
+          <input type="text" id="route-end-display" placeholder="Destination: Select entity or click map" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-300 text-[11px]" readonly>
+          <div class="flex items-center gap-2 pt-1">
+            <button onclick="calculateDirectRoute(false)" class="flex-1 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition">
+              Compute Route
+            </button>
+            <button onclick="calculateDirectRoute(true)" class="py-1.5 px-3 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition" title="Compute Alternative Route">
+              Alt Route
+            </button>
+            <button onclick="clearCurrentRoute()" class="p-1.5 rounded bg-slate-800 text-slate-400 hover:text-white text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Stream / Incident Feeds -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-2">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Active Incidents On Map</div>
+        <div id="map-incident-list" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- CENTER PANEL: Real Leaflet / OSM Interactive Map (6 cols) -->
+    <div class="lg:col-span-6 relative flex flex-col h-full bg-slate-950">
+      <div id="main-map"></div>
+
+      <!-- Live GPS Coordinates Watermark -->
+      <div class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur border border-slate-800 rounded-lg px-3 py-1.5 text-[11px] font-mono text-slate-300 shadow-xl flex items-center gap-2">
+        <i class="fa-solid fa-compass text-cyan-400 animate-spin" style="animation-duration: 8s;"></i>
+        <span id="map-coord-display">12.97160° N, 77.59460° E</span>
+      </div>
+
+      <!-- Map Control Overlays -->
+      <div class="absolute bottom-4 right-4 z-[400] flex items-center gap-2">
+        <button onclick="toggleMapFullscreen()" class="p-2.5 rounded-lg bg-slate-900/90 backdrop-blur border border-slate-700 text-slate-200 hover:text-white text-xs shadow-xl" title="Toggle Fullscreen">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+        <button onclick="resetMapView()" class="p-2.5 rounded-lg bg-slate-900/90 backdrop-blur border border-slate-700 text-slate-200 hover:text-white text-xs shadow-xl" title="Reset View">
+          <i class="fa-solid fa-house"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Selected Entity Details & Verification Telemetry (3 cols) -->
+    <div class="lg:col-span-3 border-l border-slate-800 bg-[#0a0f1e] flex flex-col h-full overflow-hidden z-20">
+      <div class="p-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-cyan-400"></i>
+          <span>Entity Inspector</span>
+        </div>
+        <span class="text-[10px] text-emerald-400 font-mono">LIVE TELEMETRY</span>
+      </div>
+
+      <!-- Entity Details Card -->
+      <div id="entity-details-panel" class="p-4 space-y-4 flex-1 overflow-y-auto">
+        <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/40 text-center text-slate-500 text-xs">
+          Click any incident, ambulance, hospital, safe haven, or hazard zone on the map to inspect verified coordinates, bed availability, and live telemetry.
+        </div>
+      </div>
+
+      <!-- Route Info Card -->
+      <div id="route-info-panel" class="hidden p-3 border-t border-slate-800 bg-cyan-950/20 text-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-cyan-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-route"></i>
+            <span>Active Corridor</span>
+          </span>
+          <span id="route-engine-badge" class="px-2 py-0.5 rounded bg-cyan-900/60 text-[9px] text-cyan-300 font-mono">OSRM</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center">
+          <div class="p-2 rounded bg-slate-900 border border-slate-800">
+            <div class="text-[10px] text-slate-400 uppercase">Estimated Distance</div>
+            <div class="text-base font-black text-white mono" id="route-dist">-- km</div>
+          </div>
+          <div class="p-2 rounded bg-slate-900 border border-slate-800">
+            <div class="text-[10px] text-slate-400 uppercase">Transit Time</div>
+            <div class="text-base font-black text-emerald-400 mono" id="route-dur">-- mins</div>
+          </div>
+        </div>
+        <div id="route-blocked-alert" class="hidden text-[10px] text-amber-300 bg-amber-950/60 p-2 rounded border border-amber-800"></div>
+        <div class="text-[9px] text-slate-500 italic">Estimates computed via OSRM open road network. Actual traffic & weather subject to physical road constraints.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/offline-sync.js"></script>
+  <script src="js/websocket.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script>
+    let map = null;
+    let markers = {
+      incidents: {},
+      ambulances: {},
+      hospitals: {},
+      shelters: {}
+    };
+    let zoneLayers = [];
+    let blockedRoadLayers = [];
+    let currentPolyline = null;
+
+    let selectedStartPoint = null;
+    let selectedEndPoint = null;
+    const defaultCenter = [12.9716, 77.5946]; // Metro City Coordinates
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTacticalMap();
+      await refreshMapData();
+
+      // Subscribe to real-time ambulance updates via WebSocket
+      if (window.realtime) {
+        window.realtime.on('AMBULANCE_LOCATION_UPDATE', (amb) => {
+          updateAmbulanceMarker(amb);
+        });
+        window.realtime.on('EMERGENCY_UPDATE', () => refreshMapData());
+      }
+    });
+
+    function initTacticalMap() {
+      map = L.map('main-map', { zoomControl: false }).setView(defaultCenter, 13);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // OpenStreetMap Standard Tiles Layer with authentic OpenStreetMap attribution
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      map.on('mousemove', (e) => {
+        document.getElementById('map-coord-display').innerText =
+          `${e.latlng.lat.toFixed(5)}° N, ${e.latlng.lng.toFixed(5)}° E`;
+      });
+
+      map.on('click', (e) => {
+        if (!selectedStartPoint) {
+          selectedStartPoint = [e.latlng.lat, e.latlng.lng];
+          document.getElementById('route-start-display').value = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)} (Custom Point)`;
+        } else if (!selectedEndPoint) {
+          selectedEndPoint = [e.latlng.lat, e.latlng.lng];
+          document.getElementById('route-end-display').value = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)} (Custom Point)`;
+        }
+      });
+    }
+
+    async function refreshMapData() {
+      try {
+        const data = await API.request('/maps/overview');
+        renderIncidents(data.emergencies || []);
+        renderAmbulances(data.ambulances || []);
+        renderHospitals(data.hospitals || []);
+        renderShelters(data.safeZones || []);
+        renderEmergencyZones(data.emergencyZones || []);
+        renderBlockedRoads(data.blockedRoads || []);
+      } catch (err) {
+        console.error('Error refreshing map telemetry:', err);
+      }
+    }
+
+    // 1. Incidents Layer
+    function renderIncidents(list) {
+      Object.values(markers.incidents).forEach(m => map.removeLayer(m));
+      markers.incidents = {};
+
+      const listCont = document.getElementById('map-incident-list');
+      listCont.innerHTML = '';
+
+      list.forEach(emg => {
+        if (!emg.latitude || !emg.longitude) return;
+
+        const iconHtml = `<div class="w-8 h-8 rounded-full bg-red-600 border-2 border-white flex items-center justify-center text-white text-xs shadow-lg animate-pulse">🚨</div>`;
+        const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [32, 32], iconAnchor: [16, 16] });
+
+        const m = L.marker([emg.latitude, emg.longitude], { icon }).addTo(map);
+        m.on('click', () => inspectIncident(emg));
+        markers.incidents[emg.id] = m;
+
+        // Add to left panel stream
+        const card = document.createElement('div');
+        card.className = 'p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-red-500 cursor-pointer text-xs';
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-white mono">${emg.incidentCode}</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${emg.priority === 'CRITICAL' ? 'bg-red-950 text-red-400' : 'bg-amber-950 text-amber-400'}">${emg.priority}</span>
+          </div>
+          <div class="text-slate-300 text-[11px] font-semibold">${emg.type}</div>
+          <div class="text-slate-500 text-[10px] truncate">${emg.address}</div>
+        `;
+        card.onclick = () => {
+          map.setView([emg.latitude, emg.longitude], 15);
+          inspectIncident(emg);
+        };
+        listCont.appendChild(card);
+      });
+    }
+
+    // 2. Ambulances Layer
+    function renderAmbulances(list) {
+      Object.values(markers.ambulances).forEach(m => map.removeLayer(m));
+      markers.ambulances = {};
+
+      list.forEach(amb => {
+        updateAmbulanceMarker(amb);
+      });
+    }
+
+    function updateAmbulanceMarker(amb) {
+      if (!amb.latitude || !amb.longitude) return;
+      if (markers.ambulances[amb.ambulanceId || amb.id]) {
+        map.removeLayer(markers.ambulances[amb.ambulanceId || amb.id]);
+      }
+
+      const iconHtml = `<div class="w-7 h-7 rounded-full bg-sky-500 border border-white flex items-center justify-center text-white text-xs shadow-md">🚑</div>`;
+      const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14] });
+
+      const m = L.marker([amb.latitude, amb.longitude], { icon }).addTo(map);
+      m.on('click', () => inspectAmbulance(amb));
+      markers.ambulances[amb.ambulanceId || amb.id] = m;
+    }
+
+    // 3. Hospitals Layer
+    function renderHospitals(list) {
+      Object.values(markers.hospitals).forEach(m => map.removeLayer(m));
+      markers.hospitals = {};
+
+      list.forEach(h => {
+        if (!h.latitude || !h.longitude) return;
+
+        const iconHtml = `<div class="w-7 h-7 rounded-full bg-emerald-600 border border-white flex items-center justify-center text-white text-xs shadow-md">🏥</div>`;
+        const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14] });
+
+        const m = L.marker([h.latitude, h.longitude], { icon }).addTo(map);
+        m.on('click', () => inspectHospital(h));
+        markers.hospitals[h.id || h.hospitalId] = m;
+      });
+    }
+
+    // 4. Safe Zones / Shelters Layer
+    function renderShelters(list) {
+      Object.values(markers.shelters).forEach(m => map.removeLayer(m));
+      markers.shelters = {};
+
+      list.forEach(s => {
+        if (!s.latitude || !s.longitude) return;
+
+        const iconHtml = `<div class="w-7 h-7 rounded-full bg-amber-600 border border-white flex items-center justify-center text-white text-xs shadow-md">⛺</div>`;
+        const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14] });
+
+        const m = L.marker([s.latitude, s.longitude], { icon }).addTo(map);
+        m.on('click', () => inspectShelter(s));
+        markers.shelters[s.id] = m;
+      });
+    }
+
+    // 5. Emergency Hazard Zones (Polygons / Circles)
+    function renderEmergencyZones(zones) {
+      zoneLayers.forEach(l => map.removeLayer(l));
+      zoneLayers = [];
+
+      zones.forEach(z => {
+        if (!z.centerLatitude || !z.centerLongitude) return;
+
+        const isCrit = z.severity === 'CRITICAL';
+        const color = isCrit ? '#ef4444' : z.zoneType === 'SAFE_ZONE' ? '#10b981' : '#a855f7';
+
+        const circle = L.circle([z.centerLatitude, z.centerLongitude], {
+          radius: z.radiusMeters || 500,
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.2,
+          weight: 2
+        }).addTo(map);
+
+        circle.bindPopup(`
+          <div class="text-xs space-y-1">
+            <div class="font-bold text-white">${z.zoneName}</div>
+            <div class="text-slate-300 font-semibold">[${z.zoneType}] • Severity: ${z.severity}</div>
+            <div class="text-slate-400">${z.advisoryNotice || ''}</div>
+          </div>
+        `);
+        zoneLayers.push(circle);
+      });
+    }
+
+    // 6. Blocked Roads (Corridor Polylines)
+    function renderBlockedRoads(roads) {
+      blockedRoadLayers.forEach(l => map.removeLayer(l));
+      blockedRoadLayers = [];
+
+      roads.forEach(r => {
+        if (!r.startLatitude || !r.endLatitude) return;
+        const line = L.polyline([
+          [r.startLatitude, r.startLongitude],
+          [r.endLatitude, r.endLongitude]
+        ], {
+          color: '#f97316',
+          weight: 6,
+          dashArray: '6, 6'
+        }).addTo(map);
+
+        line.bindPopup(`
+          <div class="text-xs">
+            <div class="font-bold text-orange-400">⛔ BLOCKED ROAD: ${r.roadName}</div>
+            <div class="text-slate-300">${r.reason}</div>
+          </div>
+        `);
+        blockedRoadLayers.push(line);
+      });
+    }
+
+    // Entity Inspectors
+    function inspectIncident(e) {
+      selectedEndPoint = [e.latitude, e.longitude];
+      document.getElementById('route-end-display').value = `${e.incidentCode} (${e.type})`;
+
+      const panel = document.getElementById('entity-details-panel');
+      panel.innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-900 border border-red-500/50 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-white mono">${e.incidentCode}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${e.priority === 'CRITICAL' ? 'bg-red-950 text-red-400' : 'bg-amber-950 text-amber-400'}">${e.priority}</span>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-white">${e.type}</div>
+            <div class="text-xs text-slate-400">${e.address}</div>
+          </div>
+          <p class="text-xs text-slate-300 bg-slate-950 p-2.5 rounded border border-slate-800">${e.description || 'Emergency scene'}</p>
+          <div class="flex gap-2">
+            <button onclick="setAsRouteStart([${e.latitude}, ${e.longitude}], '${e.incidentCode}')" class="flex-1 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-semibold">Route From Here</button>
+            <button onclick="setAsRouteEnd([${e.latitude}, ${e.longitude}], '${e.incidentCode}')" class="flex-1 py-1.5 rounded bg-cyan-700 hover:bg-cyan-600 text-xs text-white font-bold">Route To Here</button>
+          </div>
+          <a href="command-center.html" class="block w-full text-center py-2 rounded bg-red-600 hover:bg-red-500 text-white font-bold text-xs">
+            Dispatch Tactical Unit
+          </a>
+        </div>
+      `;
+    }
+
+    function inspectHospital(h) {
+      const panel = document.getElementById('entity-details-panel');
+      panel.innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-900 border border-emerald-500/50 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-white">Trauma Hospital</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400">VERIFIED</span>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-white">${h.name}</div>
+            <div class="text-xs text-slate-400">${h.address}</div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-center text-xs">
+            <div class="p-2 rounded bg-slate-950 border border-slate-800">
+              <div class="text-[10px] text-slate-400">ICU Avail</div>
+              <div class="text-base font-bold text-emerald-400 mono">${h.icuBedsAvailable || h.icuBeds || 12} Beds</div>
+            </div>
+            <div class="p-2 rounded bg-slate-950 border border-slate-800">
+              <div class="text-[10px] text-slate-400">ER Beds Avail</div>
+              <div class="text-base font-bold text-sky-400 mono">${h.emergencyBedsAvailable || h.emergencyBeds || 28} Beds</div>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-400">Emergency Phone: <span class="mono text-white font-bold">${h.emergencyContactPhone || '080-22001001'}</span></div>
+          <button onclick="setAsRouteEnd([${h.latitude}, ${h.longitude}], '${h.name}')" class="w-full py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">
+            Navigate Ambulance Here
+          </button>
+        </div>
+      `;
+    }
+
+    function inspectAmbulance(a) {
+      const panel = document.getElementById('entity-details-panel');
+      panel.innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-900 border border-sky-500/50 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-white mono">${a.unitCode}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 text-sky-400">${a.status}</span>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-white">${a.organization || 'Emergency Medical Service'}</div>
+            <div class="text-xs text-slate-400">Speed: ${a.speedKmH || 0} km/h • GPS Verified</div>
+          </div>
+          <div class="text-[11px] text-slate-400">Coordinates: <span class="mono text-white">${a.latitude.toFixed(4)}, ${a.longitude.toFixed(4)}</span></div>
+          <button onclick="setAsRouteStart([${a.latitude}, ${a.longitude}], '${a.unitCode}')" class="w-full py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs">
+            Route From Ambulance
+          </button>
+        </div>
+      `;
+    }
+
+    function inspectShelter(s) {
+      const panel = document.getElementById('entity-details-panel');
+      panel.innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-900 border border-amber-500/50 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-white">Safe Zone / Shelter</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400">${s.zoneType || 'RELIEF_SHELTER'}</span>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-white">${s.name}</div>
+            <div class="text-xs text-slate-400">${s.address}</div>
+          </div>
+          <div class="p-2 rounded bg-slate-950 border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">Capacity & Occupancy</div>
+            <div class="text-sm font-bold text-emerald-400">${s.currentOccupancy || 0} / ${s.totalCapacity || 500} Sheltered</div>
+          </div>
+          <button onclick="setAsRouteEnd([${s.latitude}, ${s.longitude}], '${s.name}')" class="w-full py-2 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs">
+            Generate Evacuation Route Here
+          </button>
+        </div>
+      `;
+    }
+
+    function setAsRouteStart(coords, label) {
+      selectedStartPoint = coords;
+      document.getElementById('route-start-display').value = label || `${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`;
+    }
+
+    function setAsRouteEnd(coords, label) {
+      selectedEndPoint = coords;
+      document.getElementById('route-end-display').value = label || `${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`;
+    }
+
+    // OSRM Direct Route Calculation
+    async function calculateDirectRoute(alternative = false) {
+      if (!selectedStartPoint || !selectedEndPoint) {
+        alert('Please choose both a start point and destination on the map.');
+        return;
+      }
+
+      try {
+        const res = await API.request('/maps/routes/calculate', {
+          method: 'POST',
+          body: JSON.stringify({
+            startLatitude: selectedStartPoint[0],
+            startLongitude: selectedStartPoint[1],
+            endLatitude: selectedEndPoint[0],
+            endLongitude: selectedEndPoint[1],
+            alternative: alternative
+          })
+        });
+
+        if (currentPolyline) map.removeLayer(currentPolyline);
+
+        const latLngs = res.polylineCoordinates.map(c => [c[1], c[0]]); // [lat, lng]
+        currentPolyline = L.polyline(latLngs, {
+          color: alternative ? '#a855f7' : '#06b6d4',
+          weight: 5,
+          opacity: 0.9,
+          dashArray: alternative ? '8, 8' : null
+        }).addTo(map);
+
+        map.fitBounds(currentPolyline.getBounds(), { padding: [50, 50] });
+
+        // Update Info Panel
+        document.getElementById('route-info-panel').classList.remove('hidden');
+        document.getElementById('route-engine-badge').innerText = res.routingEngine || 'OSRM';
+        document.getElementById('route-dist').innerText = `${res.distanceKm} km`;
+        document.getElementById('route-dur').innerText = `${res.durationMinutes} mins`;
+
+        const blockedAlert = document.getElementById('route-blocked-alert');
+        if (res.avoidedBlockedRoads && res.avoidedBlockedRoads.length > 0) {
+          blockedAlert.classList.remove('hidden');
+          blockedAlert.innerText = `⚠️ Routed detour around: ${res.avoidedBlockedRoads.join(', ')}`;
+        } else {
+          blockedAlert.classList.add('hidden');
+        }
+
+      } catch (e) {
+        alert('Route calculation failed: ' + e.message);
+      }
+    }
+
+    function clearCurrentRoute() {
+      if (currentPolyline) map.removeLayer(currentPolyline);
+      selectedStartPoint = null;
+      selectedEndPoint = null;
+      document.getElementById('route-start-display').value = '';
+      document.getElementById('route-end-display').value = '';
+      document.getElementById('route-info-panel').classList.add('hidden');
+    }
+
+    // Geolocation API
+    function locateUserPosition() {
+      if (!navigator.geolocation) {
+        alert('Browser Geolocation is not supported by your browser.');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          map.setView([lat, lng], 15);
+
+          const icon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="w-6 h-6 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white text-xs shadow-xl animate-pulse">📍</div>`,
+            iconSize: [24, 24]
+          });
+          L.marker([lat, lng], { icon }).addTo(map).bindPopup('<b>Your Current Location</b><br>GPS Verified').openPopup();
+
+          selectedStartPoint = [lat, lng];
+          document.getElementById('route-start-display').value = `My Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        },
+        (err) => {
+          alert('GPS permission not granted. You can click on the map to set your location manually.');
+        }
+      );
+    }
+
+    // Geocoding Search
+    async function executeLocationSearch() {
+      const q = document.getElementById('map-search-input').value.trim();
+      if (!q) return;
+
+      const listCont = document.getElementById('search-results-list');
+      listCont.classList.remove('hidden');
+      listCont.innerHTML = '<div class="text-[10px] text-slate-400 p-2 text-center">Searching OpenStreetMap Nominatim...</div>';
+
+      try {
+        const results = await API.request(`/maps/search?q=${encodeURIComponent(q)}`);
+        if (!results || results.length === 0) {
+          listCont.innerHTML = '<div class="text-[10px] text-slate-500 p-2 text-center">No matching locations found.</div>';
+          return;
+        }
+
+        listCont.innerHTML = results.map(r => `
+          <div onclick="selectSearchResult(${r.latitude}, ${r.longitude}, '${r.displayName.replace(/'/g, "\\'")}')" class="p-1.5 rounded hover:bg-slate-900 cursor-pointer text-[11px] text-slate-300">
+            <i class="fa-solid fa-location-dot text-cyan-400 mr-1"></i>
+            <span>${r.displayName}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        listCont.innerHTML = '<div class="text-[10px] text-red-400 p-2 text-center">Search error. Try direct coordinates.</div>';
+      }
+    }
+
+    function selectSearchResult(lat, lng, name) {
+      document.getElementById('search-results-list').classList.add('hidden');
+      map.setView([lat, lng], 15);
+      L.popup().setLatLng([lat, lng]).setContent(`<b>${name}</b>`).openOn(map);
+      selectedEndPoint = [lat, lng];
+      document.getElementById('route-end-display').value = name;
+    }
+
+    function toggleLayers() {
+      const inc = document.getElementById('layer-incidents').checked;
+      const amb = document.getElementById('layer-ambulances').checked;
+      const hosp = document.getElementById('layer-hospitals').checked;
+      const sh = document.getElementById('layer-shelters').checked;
+      const z = document.getElementById('layer-zones').checked;
+      const b = document.getElementById('layer-blocks').checked;
+
+      Object.values(markers.incidents).forEach(m => inc ? map.addLayer(m) : map.removeLayer(m));
+      Object.values(markers.ambulances).forEach(m => amb ? map.addLayer(m) : map.removeLayer(m));
+      Object.values(markers.hospitals).forEach(m => hosp ? map.addLayer(m) : map.removeLayer(m));
+      Object.values(markers.shelters).forEach(m => sh ? map.addLayer(m) : map.removeLayer(m));
+      zoneLayers.forEach(l => z ? map.addLayer(l) : map.removeLayer(l));
+      blockedRoadLayers.forEach(l => b ? map.addLayer(l) : map.removeLayer(l));
+    }
+
+    function resetMapView() {
+      map.setView(defaultCenter, 13);
+    }
+
+    function toggleMapFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  </script>
+</body>
+</html>

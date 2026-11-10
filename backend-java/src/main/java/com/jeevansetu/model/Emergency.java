@@ -67,6 +67,7 @@ public class Emergency {
     private Instant escalatedAt;
     private int escalationLevel = 0; // 0 = Normal, 1 = Overdue Warning, 2 = Critical Overdue
     private boolean escalationAcknowledged = false;
+    private Instant escalationAcknowledgedAt;
     private String escalationAcknowledgedBy;
 
     // Offline Synchronization Idempotency Key
@@ -192,6 +193,9 @@ public class Emergency {
 
     public boolean isEscalationAcknowledged() { return escalationAcknowledged; }
     public void setEscalationAcknowledged(boolean escalationAcknowledged) { this.escalationAcknowledged = escalationAcknowledged; }
+
+    public Instant getEscalationAcknowledgedAt() { return escalationAcknowledgedAt; }
+    public void setEscalationAcknowledgedAt(Instant escalationAcknowledgedAt) { this.escalationAcknowledgedAt = escalationAcknowledgedAt; }
 
     public String getEscalationAcknowledgedBy() { return escalationAcknowledgedBy; }
     public void setEscalationAcknowledgedBy(String escalationAcknowledgedBy) { this.escalationAcknowledgedBy = escalationAcknowledgedBy; }

@@ -32,17 +32,23 @@
       </a>
 
       <!-- Desktop Nav Links -->
-      <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
+      <div class="hidden md:flex items-center space-x-5 text-sm font-medium text-slate-300">
         <a href="#home" class="hover:text-white transition">Home</a>
-        <a href="#how-it-works" class="hover:text-white transition">How It Works</a>
-        <a href="#services" class="hover:text-white transition">Emergency Services</a>
-        <a href="command-center.html" class="hover:text-white text-cyan-400 font-semibold flex items-center gap-1.5 transition">
+        <a href="map-dashboard.html" class="hover:text-cyan-400 font-semibold flex items-center gap-1 transition text-cyan-400">
+          <i class="fa-solid fa-map-location-dot"></i> Live Map
+        </a>
+        <a href="evacuation-planner.html" class="hover:text-amber-400 font-semibold flex items-center gap-1 transition text-amber-400">
+          <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i> Evacuation
+        </a>
+        <a href="command-center.html" class="hover:text-white text-rose-400 font-semibold flex items-center gap-1.5 transition">
           <i class="fa-solid fa-satellite-dish animate-pulse"></i> Command Center
         </a>
-        <a href="admin.html" class="hover:text-white text-purple-400 font-semibold flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-shield-halved"></i> Admin Console
+        <a href="preparedness.html" class="hover:text-emerald-400 font-semibold flex items-center gap-1 transition text-emerald-400">
+          <i class="fa-solid fa-book-medical"></i> Safety Guides
         </a>
-        <a href="analytics.html" class="hover:text-white transition">Analytics</a>
+        <a href="admin.html" class="hover:text-white text-purple-400 font-semibold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-shield-halved"></i> Admin Grid
+        </a>
       </div>
 
       <!-- Action Buttons -->
@@ -257,6 +263,131 @@
           <h3 class="font-bold text-white text-base">General Assistance</h3>
           <p class="text-xs text-slate-400 mt-1">Non-classified public safety & urgent civil needs.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Emergency Preparedness, Evacuation & Public Safety Grid -->
+  <section class="py-20 bg-[#070b14] border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-xs uppercase font-bold tracking-widest text-emerald-400">Public Safety & Preparedness Subsystem</h2>
+        <p class="text-3xl sm:text-4xl font-extrabold text-white mt-2">Intelligent Disaster & Evacuation Portals</p>
+        <p class="text-slate-400 text-sm mt-3">Authoritative NDMA first aid protocols, Dijkstra-calculated safe corridors, interactive OpenStreetMap fleet tracking, and privacy-preserving family reunification.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Card 1: Tactical Map -->
+        <a href="map-dashboard.html" class="panel-card p-5 hover:border-cyan-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-800 text-cyan-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Tactical Map & Fleet GPS</h3>
+            <p class="text-xs text-slate-400 mt-1">Interactive Leaflet OpenStreetMap grid with real-time ambulance GPS tracking, hospital ICU status, and hazard geofencing.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-cyan-400 flex items-center gap-1">
+            <span>Open Tactical Map</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 2: Evacuation Planner -->
+        <a href="evacuation-planner.html" class="panel-card p-5 hover:border-amber-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-amber-950 border border-amber-800 text-amber-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-person-walking-dashed-line-arrow-right"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Smart Evacuation Planner</h3>
+            <p class="text-xs text-slate-400 mt-1">Dijkstra graph engine calculates primary and alternative safe evacuation corridors, automatically routing around blocked roads.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-amber-400 flex items-center gap-1">
+            <span>Calculate Routes</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 3: Family Reunification -->
+        <a href="family-reunification.html" class="panel-card p-5 hover:border-blue-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-blue-950 border border-blue-800 text-blue-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-people-roof"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Family Reunification</h3>
+            <p class="text-xs text-slate-400 mt-1">Report missing loved ones, log safe-arrival confirmations, and search authorized reports with privacy-masked identities.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-blue-400 flex items-center gap-1">
+            <span>Reunification Portal</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 4: Simulation Lab -->
+        <a href="simulation-lab.html" class="panel-card p-5 hover:border-purple-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-800 text-purple-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-flask-vial"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Disaster Simulation Lab</h3>
+            <p class="text-xs text-slate-400 mt-1">Isolated sandbox for emergency training. Simulate urban flash floods, structural collapse, and fleet shortages without real alerts.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-purple-400 flex items-center gap-1">
+            <span>Launch Simulation</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 5: Public Safety Hazard Portal -->
+        <a href="public-safety.html" class="panel-card p-5 hover:border-orange-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-orange-950 border border-orange-800 text-orange-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Public Safety Hazard Portal</h3>
+            <p class="text-xs text-slate-400 mt-1">Report waterlogged roads, fallen trees, live electrical hazards, and open manholes with GPS and spatial duplicate suppression.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-orange-400 flex items-center gap-1">
+            <span>Report Hazards</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 6: Emergency Preparedness & First Aid -->
+        <a href="preparedness.html" class="panel-card p-5 hover:border-emerald-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-800 text-emerald-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-book-medical"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Preparedness & First Aid</h3>
+            <p class="text-xs text-slate-400 mt-1">Certified step-by-step CPR and trauma instructions, disaster guides in 4 languages, and interactive 72-hour survival go-bag.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-emerald-400 flex items-center gap-1">
+            <span>View Safety Guides</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 7: QR-Based Medical Profile -->
+        <a href="emergency-profile.html" class="panel-card p-5 hover:border-rose-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-rose-950 border border-rose-800 text-rose-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Emergency QR Profile</h3>
+            <p class="text-xs text-slate-400 mt-1">Generate a personal emergency medical pass for paramedics. Granular selective disclosure controls and tamper-evident audit logs.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-rose-400 flex items-center gap-1">
+            <span>Manage My QR Pass</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
+
+        <!-- Card 8: Command Center Link -->
+        <a href="command-center.html" class="panel-card p-5 hover:border-indigo-500/60 transition group flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-800 text-indigo-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+              <i class="fa-solid fa-satellite-dish"></i>
+            </div>
+            <h3 class="font-bold text-white text-sm">Incident Command Center</h3>
+            <p class="text-xs text-slate-400 mt-1">Multi-agency coordination center for triage officers, real-time priority queues, dynamic escalations, and resource assignments.</p>
+          </div>
+          <div class="mt-4 text-xs font-bold text-indigo-400 flex items-center gap-1">
+            <span>Enter Command Grid</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </div>
+        </a>
       </div>
     </div>
   </section>

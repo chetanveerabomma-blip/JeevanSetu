@@ -787,6 +787,349 @@ const API = {
         store.emergencies.map(e => `${e.incidentCode},${e.type},${e.priority},${e.status},"${e.address}",${e.createdAt}`).join('\n');
     }
 
+    // ==========================================
+    // 29. Smart Evacuation Planner & Safe Zones
+    // ==========================================
+    if (endpoint === '/evacuation/safe-zones') {
+      return store.safeZones || [
+        { id: 'sz-1', name: 'Central Sports Complex (Zone A)', zoneType: 'COMMUNITY_CENTRE', address: 'MG Road Stadium Grounds', latitude: 12.9730, longitude: 77.6010, totalCapacity: 800, currentOccupancy: 320, availableCapacity: 480, medicalSupportAvailable: true, foodAndWaterAvailable: true, open: true, contactPhone: '080-25607001' },
+        { id: 'sz-2', name: 'University Science Campus Hall', zoneType: 'HIGHER_GROUND', address: 'Outer Ring Elevated Ridge', latitude: 12.9850, longitude: 77.5850, totalCapacity: 500, currentOccupancy: 120, availableCapacity: 380, medicalSupportAvailable: true, foodAndWaterAvailable: true, open: true, contactPhone: '080-25607002' },
+        { id: 'sz-3', name: 'District Relief Pavilion 3', zoneType: 'DISASTER_SHELTER', address: 'Indiranagar 80ft Arena', latitude: 12.9650, longitude: 77.6250, totalCapacity: 1200, currentOccupancy: 450, availableCapacity: 750, medicalSupportAvailable: true, foodAndWaterAvailable: true, open: true, contactPhone: '080-25607003' }
+      ];
+    }
+
+    if (endpoint === '/evacuation/blocked-roads') {
+      if (options.method === 'POST') {
+        const body = JSON.parse(options.body || '{}');
+        body.id = 'blk-' + Date.now();
+        body.blockedAt = new Date().toISOString();
+        if (!store.blockedRoads) store.blockedRoads = [];
+        store.blockedRoads.push(body);
+        this.saveLocalStore(store);
+        return body;
+      }
+      return store.blockedRoads || [
+        { id: 'blk-1', roadName: 'Brigade Underpass Sub-level', reason: 'Flooding 3.5ft', startLatitude: 12.9710, startLongitude: 77.5990, endLatitude: 12.9725, endLongitude: 77.6005, blockedAt: new Date(Date.now() - 3600000).toISOString() },
+        { id: 'blk-2', roadName: 'Old Airport Overpass Ramp', reason: 'Structural Inspection', startLatitude: 12.9600, startLongitude: 77.6200, endLatitude: 12.9615, endLongitude: 77.6215, blockedAt: new Date(Date.now() - 7200000).toISOString() }
+      ];
+    }
+
+    if (endpoint.startsWith('/evacuation/blocked-roads/') && options.method === 'DELETE') {
+      const blkId = endpoint.split('/').pop();
+      if (store.blockedRoads) {
+        store.blockedRoads = store.blockedRoads.filter(b => b.id !== blkId);
+        this.saveLocalStore(store);
+      }
+      return { success: true };
+    }
+
+    if (endpoint === '/evacuation/plan' && options.method === 'POST') {
+      const body = JSON.parse(options.body || '{}');
+      const originLat = body.originLatitude || 12.9716;
+      const originLng = body.originLongitude || 77.5946;
+      const targetShelter = {
+        name: 'Central Sports Complex (Zone A)',
+        address: 'MG Road Stadium Grounds',
+        availableCapacity: 480,
+        latitude: 12.9730,
+        longitude: 77.6010,
+        contactPhone: '080-25607001'
+      };
+      return {
+        id: 'EVAC-' + Date.now(),
+        hazardAreaName: body.hazardAreaName || 'Active Incident Hazard Zone',
+        evacuationUrgency: 'IMMEDIATE',
+        recommendedShelter: targetShelter,
+        primaryCorridorWaypoints: [
+          [originLat, originLng],
+          [originLat + 0.001, originLng + 0.003],
+          [originLat + 0.002, originLng + 0.005],
+          [targetShelter.latitude, targetShelter.longitude]
+        ],
+        alternativeCorridorWaypoints: [
+          [originLat, originLng],
+          [originLat - 0.002, originLng + 0.002],
+          [originLat - 0.001, originLng + 0.005],
+          [targetShelter.latitude, targetShelter.longitude]
+        ],
+        evacuationDistanceKm: 2.8,
+        estimatedTransitMinutes: 12.5,
+        turnByTurnInstructions: [
+          'Head east toward North Cross Road (0.6 km). Avoid Brigade Underpass.',
+          'Turn left onto Stadium Boulevard Link Corridor (1.2 km).',
+          'Arrive at Central Sports Complex Relief Gate 2 (0.4 km).'
+        ],
+        activeRoadRestrictionsEncountered: 1,
+        generatedAt: new Date().toISOString()
+      };
+    }
+
+    // ==========================================
+    // 30. Family Reunification System
+    // ==========================================
+    if (endpoint === '/reunification/family-groups' && options.method === 'POST') {
+      const body = JSON.parse(options.body || '{}');
+      body.id = 'FAM-' + Date.now();
+      body.registrationCode = 'FAM-' + Math.floor(1000 + Math.random() * 9000);
+      return body;
+    }
+
+    if (endpoint === '/reunification/missing-reports') {
+      if (options.method === 'POST') {
+        const body = JSON.parse(options.body || '{}');
+        body.id = 'MIS-' + Date.now();
+        body.reportCode = 'MIS-2026-' + Math.floor(100 + Math.random() * 900);
+        body.status = 'ACTIVE_SEARCH';
+        body.reportedAt = new Date().toISOString();
+        if (!store.missingReports) store.missingReports = [];
+        store.missingReports.unshift(body);
+        this.saveLocalStore(store);
+        return body;
+      }
+      return store.missingReports || [
+        { id: 'mis-1', reportCode: 'MIS-2026-101', missingPersonName: 'Kavita Sundaram', age: 34, gender: 'FEMALE', lastKnownLocation: 'Commercial Plaza Floor 2', status: 'ACTIVE_SEARCH', maskedContact: '9845X-XXX01', reportedAt: new Date(Date.now() - 3600000).toISOString() },
+        { id: 'mis-2', reportCode: 'MIS-2026-102', missingPersonName: 'Aarush V.', age: 9, gender: 'MALE', lastKnownLocation: 'Victoria Metro Corridor Exit', status: 'TRACED_SAFE', maskedContact: '9845X-XXX02', reportedAt: new Date(Date.now() - 7200000).toISOString() }
+      ];
+    }
+
+    if (endpoint === '/reunification/safe-arrivals') {
+      if (options.method === 'POST') {
+        const body = JSON.parse(options.body || '{}');
+        body.id = 'ARR-' + Date.now();
+        body.confirmedAt = new Date().toISOString();
+        if (!store.safeArrivals) store.safeArrivals = [];
+        store.safeArrivals.unshift(body);
+        this.saveLocalStore(store);
+        return body;
+      }
+      return store.safeArrivals || [
+        { id: 'arr-1', citizenName: 'Karan Mehra', shelterOrSafeZoneName: 'Central Sports Complex (Zone A)', message: 'Reached relief hall safely with parents. We have water and charge.', arrivalTimestamp: new Date(Date.now() - 1800000).toISOString() },
+        { id: 'arr-2', citizenName: 'Deepa Krishnan', shelterOrSafeZoneName: 'University Science Campus Hall', message: 'First aid received. Battery is low but safe.', arrivalTimestamp: new Date(Date.now() - 4500000).toISOString() }
+      ];
+    }
+
+    if (endpoint.startsWith('/reunification/search')) {
+      const reports = store.missingReports || [
+        { id: 'mis-1', reportCode: 'MIS-2026-101', missingPersonName: 'Kavita S***', age: 34, gender: 'FEMALE', lastKnownLocation: 'Commercial Plaza Floor 2', status: 'ACTIVE_SEARCH', maskedContact: '9845X-XXX01', reportedAt: new Date().toISOString() }
+      ];
+      return reports;
+    }
+
+    // ==========================================
+    // 31. Disaster Simulation Lab
+    // ==========================================
+    if (endpoint === '/simulation/scenarios') {
+      if (options.method === 'POST') {
+        const body = JSON.parse(options.body || '{}');
+        body.id = 'SIM-SCN-' + Date.now();
+        body.isSimulation = true;
+        body.simulationStatus = 'DRAFT';
+        body.createdAt = new Date().toISOString();
+        return body;
+      }
+      return [
+        { id: 'scn-1', title: 'Urban Flash Flood — Central Metro Basin', scenarioType: 'FLOOD', incidentCount: 12, availableAmbulanceCount: 4, hospitalBedCapacity: 10, isSimulation: true },
+        { id: 'scn-2', title: 'Chemical Plant Thermal Explosion', scenarioType: 'FIRE', incidentCount: 8, availableAmbulanceCount: 5, hospitalBedCapacity: 6, isSimulation: true }
+      ];
+    }
+
+    if (endpoint.includes('/simulation/scenarios/') && endpoint.endsWith('/run')) {
+      const scnId = endpoint.split('/')[3];
+      return {
+        id: 'SIM-RES-' + Date.now(),
+        scenarioId: scnId,
+        scenarioTitle: 'Sandbox Stress Test',
+        strategyName: 'Heuristic Multi-Factor Ranking',
+        totalSimulatedIncidents: 10,
+        criticalIncidentsTriageCount: 5,
+        successfullyDispatchedCount: 7,
+        unhandledOrDelayedCount: 3,
+        averageSimulatedResponseMinutes: 6.4,
+        resourceUtilizationPercentage: 92.0,
+        simulatedTimeline: [
+          'T+00m: [SIMULATION INITIALIZED] Sandbox commenced with 10 synthetic emergencies.',
+          'T+01m: [FLEET CHECK] 3 simulated ambulances online; 8 trauma ICU beds reserved.',
+          'T+02m: [DISPATCHED] Synthetic incident SIM-2026-001 [CRITICAL] allocated simulated ALS unit. ETA: 4.8 mins.',
+          'T+04m: [DISPATCHED] Synthetic incident SIM-2026-002 [HIGH] allocated simulated BLS unit. ETA: 5.6 mins.',
+          'T+06m: [DISPATCHED] Synthetic incident SIM-2026-003 [CRITICAL] allocated simulated ALS unit. ETA: 6.2 mins.',
+          'T+08m: [CAPACITY EXCEEDED] Synthetic incident SIM-2026-004 queued. Available ambulances exhausted.',
+          'T+10m: [CAPACITY EXCEEDED] Synthetic incident SIM-2026-005 queued. Fleet deficit.',
+          'T+12m: [DISPATCHED] Synthetic unit released from Hospital Victoria. Re-assigned to SIM-2026-004. ETA: 7.1 mins.'
+        ],
+        identifiedBottlenecks: [
+          'Fleet Depletion: 3 simulated incidents experienced delayed triage due to concurrent ALS unit deficit.',
+          'Hospital Surge Limit: Trauma bed buffer reached 90% saturation within 15 minutes.'
+        ],
+        recommendationReport: 'Deploy 2 additional roving ALS emergency ambulances in Sector 4 and activate satellite disaster overflow wards to lower delay rate to zero.',
+        isSimulation: true,
+        executedAt: new Date().toISOString()
+      };
+    }
+
+    // ==========================================
+    // 32. Public Safety Portal & Hazard Reports
+    // ==========================================
+    if (endpoint === '/public-safety/reports') {
+      if (options.method === 'POST') {
+        const body = JSON.parse(options.body || '{}');
+        body.id = 'hz-' + Date.now();
+        body.reportCode = 'PS-' + Math.floor(1000 + Math.random() * 9000);
+        body.status = 'PENDING_VERIFICATION';
+        body.upvoteCount = 1;
+        body.reportedAt = new Date().toISOString();
+        if (!store.publicSafetyReports) store.publicSafetyReports = [];
+        store.publicSafetyReports.unshift(body);
+        this.saveLocalStore(store);
+        return body;
+      }
+      return store.publicSafetyReports || [
+        { id: 'hz-1', reportCode: 'PS-1081', category: 'FLOODED_ROAD', address: 'Koramangala 80ft Road, 4th Block Junction', description: 'Water accumulation of approx 2.5 feet following afternoon storm. Two wheelers stranded.', latitude: 12.9352, longitude: 77.6245, status: 'VERIFIED', upvoteCount: 14 },
+        { id: 'hz-2', reportCode: 'PS-1082', category: 'FALLEN_TREE', address: 'MG Road near Trinity Metro Station', description: 'Large banyan tree branch snapped and blocking rightward lane. Traffic redirected.', latitude: 12.9734, longitude: 77.6200, status: 'IN_PROGRESS', upvoteCount: 9 },
+        { id: 'hz-3', reportCode: 'PS-1083', category: 'ELECTRICAL_HAZARD', address: 'Indiranagar 100ft Road cross 12', description: 'High voltage live wire touching pedestrian railing after transformer spark.', latitude: 12.9784, longitude: 77.6408, status: 'VERIFIED', upvoteCount: 22 }
+      ];
+    }
+
+    if (endpoint === '/public-safety/map-hazards') {
+      const reports = store.publicSafetyReports || [];
+      return reports.filter(r => r.status === 'VERIFIED' || r.status === 'IN_PROGRESS');
+    }
+
+    if (endpoint.includes('/public-safety/reports/') && endpoint.endsWith('/upvote')) {
+      return { success: true };
+    }
+
+    // ==========================================
+    // 33. Preparedness Guides & First Aid
+    // ==========================================
+    if (endpoint.startsWith('/preparedness/guides')) {
+      return [
+        { id: 'g-cpr', category: 'FIRST_AID', title: 'Cardiopulmonary Resuscitation (CPR)', summary: 'Immediate chest compression technique to sustain blood flow during sudden cardiac arrest.', steps: ['1. Call 108 or shout for an AED.', '2. Check responsiveness and breathing.', '3. Place heel of hand on center of chest.', '4. Push hard and fast (100-120 bpm, 5-6 cm deep).', '5. Continue without interruption until help arrives.'], source: 'NDMA / Red Cross First Aid Manual' },
+        { id: 'g-bleed', category: 'FIRST_AID', title: 'Severe Bleeding & Hemorrhage Control', summary: 'Critical steps to prevent hypovolemic shock following major trauma or laceration.', steps: ['1. Apply firm, direct pressure on wound.', '2. Maintain continuous pressure with clean cloth.', '3. Add second pad if bleeding soaks through.', '4. Elevate wounded limb above heart level.', '5. Apply tourniquet 2-3 inches above wound if arterial.'], source: 'Indian Red Cross Guidelines' },
+        { id: 'g-flood', category: 'FLOOD', title: 'Flash Flood & Water Evacuation', summary: 'Essential survival protocols before, during, and after rapid urban or rural flooding.', steps: ['1. Never drive or walk through moving water.', '2. Disconnect electrical mains and gas valves.', '3. Move vulnerable family members to high floors.', '4. Boil drinking water.', '5. Keep battery radio tuned to weather warnings.'], source: 'National Disaster Management Authority (NDMA)' },
+        { id: 'g-fire', category: 'FIRE', title: 'Building Fire & Burn Care Protocol', summary: 'Safe building egress, smoke inhalation avoidance, and superficial vs severe burn triage.', steps: ['1. Crawl low under smoke.', '2. Check door handles with back of hand before opening.', '3. Stop, drop, and roll if clothes catch fire.', '4. Cool burns under cold running water for 15-20 mins.', '5. Cover loosely with sterile film.'], source: 'Fire & Emergency Services Standard' }
+      ];
+    }
+
+    // ==========================================
+    // 34. Emergency QR Medical Profiles
+    // ==========================================
+    if (endpoint === '/qr/my-profile') {
+      const key = localStorage.getItem('jeevansetu_qr_key') || 'DEMO-SECURE-KEY-8821';
+      return {
+        profile: {
+          fullName: localStorage.getItem('jeevansetu_name') || 'Citizen User',
+          bloodGroup: 'O_POSITIVE',
+          allergies: 'Penicillin, Sulfa',
+          chronicConditions: 'Mild Asthma',
+          medications: 'Salbutamol Inhaler (PRN)',
+          emergencyContactName: 'Dr. Ramesh (Guardian)',
+          emergencyContactPhone: '+91 98450-11223',
+          shareBloodGroup: true,
+          shareAllergies: true,
+          shareConditions: true,
+          shareMedications: true,
+          shareEmergencyContacts: true,
+          qrAccessKey: key,
+          active: true
+        },
+        accessUrl: 'https://chetanveerabomma-blip.github.io/JeevanSetu/emergency-profile.html?key=' + key
+      };
+    }
+
+    if (endpoint === '/qr/permissions' && options.method === 'POST') {
+      return { success: true };
+    }
+
+    if (endpoint === '/qr/regenerate' && options.method === 'POST') {
+      const newKey = 'KEY-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+      localStorage.setItem('jeevansetu_qr_key', newKey);
+      return {
+        profile: { qrAccessKey: newKey, fullName: 'Citizen User', bloodGroup: 'O_POSITIVE' },
+        accessUrl: 'https://chetanveerabomma-blip.github.io/JeevanSetu/emergency-profile.html?key=' + newKey
+      };
+    }
+
+    if (endpoint.startsWith('/qr/public-view/')) {
+      return {
+        fullName: 'Citizen User',
+        bloodGroup: 'O_POSITIVE',
+        allergies: 'Penicillin, Sulfa',
+        chronicConditions: 'Mild Asthma',
+        emergencyContacts: { primaryName: 'Dr. Ramesh', primaryPhone: '+91 98450-11223' },
+        profileActive: true,
+        scanTimestamp: new Date().toISOString()
+      };
+    }
+
+    // ==========================================
+    // 35. Emergency SLA Monitoring
+    // ==========================================
+    if (endpoint === '/sla/dashboard') {
+      return {
+        averageAcknowledgementMinutes: 1.2,
+        averageAssignmentMinutes: 3.4,
+        averageResolutionMinutes: 28.5,
+        totalEvaluatedIncidents: 42,
+        overdueIncidentsCount: 1,
+        slaCompliancePercentage: 97.6,
+        priorityBreakdown: {
+          CRITICAL: { targetMinutes: 5, compliantCount: 12, overdueCount: 0 },
+          HIGH: { targetMinutes: 10, compliantCount: 18, overdueCount: 1 },
+          MEDIUM: { targetMinutes: 20, compliantCount: 8, overdueCount: 0 },
+          LOW: { targetMinutes: 45, compliantCount: 3, overdueCount: 0 }
+        }
+      };
+    }
+
+    if (endpoint === '/sla/overdue-incidents') {
+      return [
+        { id: 'emg-102', incidentCode: 'JS-2026-000185', priority: 'HIGH', stage: 'RESOURCE_ASSIGNMENT', minutesElapsed: 14.2, targetMinutes: 10.0, overdueByMinutes: 4.2 }
+      ];
+    }
+
+    // ==========================================
+    // 36. Relief Supply Distribution
+    // ==========================================
+    if (endpoint === '/relief-distribution/inventory') {
+      return [
+        { id: 'inv-1', itemCategory: 'DRINKING_WATER', itemName: 'Sealed 20L Water Cans', warehouseLocation: 'Depot North 1', currentQuantity: 1250, unitOfMeasure: 'CANS', safetyThresholdQuantity: 300 },
+        { id: 'inv-2', itemCategory: 'FOOD_RATION', itemName: 'Ready-to-Eat Emergency Meal Packs', warehouseLocation: 'Central Relief Hub', currentQuantity: 3400, unitOfMeasure: 'PACKETS', safetyThresholdQuantity: 500 },
+        { id: 'inv-3', itemCategory: 'MEDICAL_KITS', itemName: 'Trauma & Wound Dressing Kits', warehouseLocation: 'Depot North 1', currentQuantity: 420, unitOfMeasure: 'KITS', safetyThresholdQuantity: 100 },
+        { id: 'inv-4', itemCategory: 'HYGIENE', itemName: 'Sanitation & Baby Care Kits', warehouseLocation: 'South Relief Annex', currentQuantity: 860, unitOfMeasure: 'KITS', safetyThresholdQuantity: 200 }
+      ];
+    }
+
+    // ==========================================
+    // 37. Maps & Geospatial Backend Endpoints
+    // ==========================================
+    if (endpoint === '/maps/hospitals') {
+      return store.hospitals;
+    }
+
+    if (endpoint === '/maps/ambulances') {
+      return (store.responders || []).filter(r => r.type === 'AMBULANCE');
+    }
+
+    if (endpoint === '/maps/locations') {
+      return store.emergencies.map(e => ({
+        id: e.id,
+        incidentCode: e.incidentCode,
+        category: e.type,
+        priority: e.priority,
+        latitude: e.latitude,
+        longitude: e.longitude,
+        address: e.address,
+        status: e.status
+      }));
+    }
+
+    if (endpoint === '/maps/zones') {
+      return [
+        { id: 'z-1', zoneName: 'Metro Basin Flood Hazard Area', zoneType: 'HAZARD_ZONE', severity: 'HIGH', centerLatitude: 12.9716, centerLongitude: 77.5946, radiusMeters: 1200 },
+        { id: 'z-2', zoneName: 'Safe Zone — Kanteerava Arena', zoneType: 'SAFE_ZONE', severity: 'SAFE', centerLatitude: 12.9730, centerLongitude: 77.6010, radiusMeters: 600 }
+      ];
+    }
+
     return {};
   },
 

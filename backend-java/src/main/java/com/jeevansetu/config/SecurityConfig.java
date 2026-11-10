@@ -66,6 +66,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/blood-coordination/overview").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/emergencies/check-duplicate").permitAll()
 
+                        // Real Maps & Public Safety Subsystems
+                        .requestMatchers("/api/maps/**").permitAll()
+                        .requestMatchers("/api/evacuation/**").permitAll()
+                        .requestMatchers("/api/reunification/**").permitAll()
+                        .requestMatchers("/api/simulation/**").permitAll()
+                        .requestMatchers("/api/public-safety/**").permitAll()
+                        .requestMatchers("/api/preparedness/**").permitAll()
+                        .requestMatchers("/api/qr/**").permitAll()
+                        .requestMatchers("/api/safezone/**").permitAll()
+                        .requestMatchers("/api/sla/**").permitAll()
+                        .requestMatchers("/api/relief-distribution/**").permitAll()
+                        .requestMatchers("/api/post-incident/**").permitAll()
+
                         // Static web frontend assets
                         .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/assets/**", "/favicon.ico").permitAll()
 

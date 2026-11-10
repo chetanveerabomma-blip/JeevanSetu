@@ -56,9 +56,9 @@
 
 ---
 
-## 🧠 Advanced Computer Science Algorithms & 18 Operational Modules
+## 🧠 Advanced Computer Science Algorithms & 29 Operational Modules
 
-### The 18 Specialized Enterprise Modules Implemented:
+### Specialized Enterprise Modules Implemented:
 
 | # | Enterprise Module | Core Java / Tech Implementation | Key Features |
 |---|---|---|---|
@@ -79,7 +79,18 @@
 | **15** | **Advanced Analytics & Reports** | `AnalyticsService`, `AnalyticsController` | Real database timestamp aggregations, response/dispatch time computation, CSV & executive summary export. |
 | **16** | **Ambulance & Vehicle Maintenance** | `VehicleMaintenanceService`, `VehicleRecordRepository` | Fleet maintenance tracking (`ACTIVE`, `MAINTENANCE`, `OUT_OF_SERVICE`); excluded from dispatch queues. |
 | **17** | **Advanced Security & Audit System** | `SecurityConfig`, `JwtAuthenticationFilter`, `AuditLogService` | Stateless JWT authentication, role-based access control (RBAC), immutable audit log trail. |
-| **18** | **System Administrator Dashboard** | `frontend/admin.html`, `AdminController` | 9-tab operations console managing all 18 modules with real-time live database telemetry. |
+| **18** | **System Administrator Dashboard** | `frontend/admin.html`, `AdminController` | 9-tab operations console managing platform modules with real-time live database telemetry. |
+| **19** | **Smart Evacuation Planner** | `EvacuationController`, `EvacuationService`, `RouteCalculationService`, `SafeZoneService` | Interactive Leaflet safe zone mapping, shelter capacity checks, blocked road avoidance, Dijkstra corridor calculation. |
+| **20** | **Family Reunification System** | `FamilyReunificationController`, `FamilyReunificationService`, `MissingPersonRepository` | Voluntary family registration, privacy-masked public missing search (`J*** D***`), safe-arrival confirmations, official verification. |
+| **21** | **Disaster Simulation Lab** | `SimulationController`, `EmergencySimulationService`, `SimulationScenarioRepository` | Discrete-event disaster response sandbox (`isSimulation=true`), fleet/bed saturation stress test, zero real dispatch/alerts. |
+| **22** | **Public Safety Hazard Portal** | `PublicSafetyController`, `PublicSafetyService`, `PublicSafetyReportRepository` | Citizen hazards (Flooded Road, Fallen Tree, Damaged Bridge, Live Wire), GPS capture, 300m spatial duplicate suppression, upvoting. |
+| **23** | **Preparedness & First Aid Centre** | `PreparednessController`, `PreparednessService`, `PreparednessGuideRepository` | NDMA & Red Cross certified guides (CPR, burns, floods), 4-language support, 72-hour survival go-bag checklist, text export. |
+| **24** | **QR-Based Emergency Medical Profile** | `EmergencyQrProfileController`, `EmergencyQrProfileService`, ZXing 3.5.3 | Granular privacy toggles (blood group, allergies, contacts), cryptographic access key revocation, on-scene paramedic audit trail. |
+| **25** | **Safe Zone Check-In System** | `SafeZoneCheckInController`, `SafeZoneCheckInService`, `ShelterCheckInRepository` | Shelter arrival codes (`CHK-XXXX`), occupancy synchronization, unresolved check-in monitoring. |
+| **26** | **Emergency SLA Monitoring** | `SlaMonitoringController`, `SlaMonitoringService`, `SlaConfigRepository` | Compliance dashboard computed from real timestamps (reported, acknowledged, dispatched, resolved), overdue warnings. |
+| **27** | **Relief Supply Distribution** | `ReliefDistributionController`, `ReliefSupplyService`, `DistributionPlanRepository` | Ration, water, and medical inventory allocation, distribution plan approval, dispatch tracking, delivery receipts. |
+| **28** | **Post-Incident Analysis System** | `PostIncidentController`, `PostIncidentAnalysisService`, `PostIncidentReviewRepository` | Complete incident timeline synthesis, operational lessons learned, dispatcher observations, downloadable CSV post-mortem. |
+| **29** | **Geospatial OpenStreetMap Tactical Mapping** | `MapController`, `MapService`, `RouteService`, `AmbulanceTrackingService`, Leaflet | Real OSM tiles, live GPS Locate Me, hospital bed overlays, live ambulance tracking via WebSocket, OSRM routing. |
 
 ---
 
