@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Reunification & Safe Arrivals — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body class="bg-[#090e1a] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Navigation -->
+  <header class="border-b border-slate-800 bg-[#060a14] px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-base shadow-lg shadow-emerald-600/30">
+          <i class="fa-solid fa-people-roof"></i>
+        </div>
+        <span class="text-lg font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <span class="text-xs font-bold text-emerald-400 border-l border-slate-700 pl-3 uppercase tracking-wider">DISASTER FAMILY REUNIFICATION</span>
+    </div>
+
+    <div class="flex items-center space-x-4 text-xs">
+      <a href="map-dashboard.html" class="hover:text-cyan-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-map"></i> Tactical Map</a>
+      <a href="evacuation-planner.html" class="hover:text-amber-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-route"></i> Evacuation</a>
+      <a href="admin.html" class="hover:text-indigo-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Admin Grid</a>
+      <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-slate-700 outline-none">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- Header Banner -->
+    <div class="panel-card p-6 border-l-4 border-l-emerald-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <h1 class="text-xl font-bold text-white flex items-center gap-2">
+          <span>Disaster Family Reunification & Safe Arrivals</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">PRIVACY PROTECTED</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-1 max-w-2xl">
+          Register missing relatives, check official verification status, or confirm safe arrival at designated relief centers. Public listings enforce data masking to safeguard personal privacy.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="openReportModal()" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-user-xmark"></i>
+          <span>Report Missing Relative</span>
+        </button>
+        <button onclick="openSafeArrivalModal()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>Confirm Safe Arrival</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="panel-card p-4">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <input type="text" id="missing-search-input" placeholder="Search missing person by name..."
+            onkeydown="if(event.key==='Enter') executeSearch()"
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-emerald-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+        </div>
+        <button onclick="executeSearch()" class="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+          Search
+        </button>
+        <button onclick="clearSearch()" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Two-Column Display: Missing Persons List (Left 7) & Recent Safe Arrivals (Right 5) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Missing Persons Records -->
+      <div class="lg:col-span-7 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-id-card text-red-400"></i>
+            <span>Authorized Missing Person Inquiries</span>
+          </h2>
+          <span class="text-[10px] text-slate-400 mono" id="records-count">-- Records</span>
+        </div>
+
+        <div id="missing-persons-container" class="space-y-3"></div>
+      </div>
+
+      <!-- Safe Arrivals Board -->
+      <div class="lg:col-span-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-house-chimney-user text-emerald-400"></i>
+            <span>Recent Safe Arrivals</span>
+          </h2>
+          <span class="text-[10px] text-emerald-400 font-bold">● Shelter Confirmed</span>
+        </div>
+
+        <div id="safe-arrivals-container" class="space-y-2"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Report Missing Person -->
+  <div id="modalReportMissing" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-xmark text-red-500"></i>
+          <span>Report Missing Family Member</span>
+        </h3>
+        <button onclick="closeReportModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Person Full Name</label>
+          <input type="text" id="mis-name" placeholder="Full legal name" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1 font-semibold">Age</label>
+            <input type="number" id="mis-age" value="32" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 font-semibold">Gender</label>
+            <select id="mis-gender" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Last Known Location / Landmark</label>
+          <input type="text" id="mis-loc" placeholder="e.g. Near Metro Station Sector 4" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Physical Clothing / Distinguishing Features</label>
+          <textarea id="mis-desc" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white" placeholder="Blue t-shirt, glasses, backpack..."></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1 font-semibold">Reporting Relative Name</label>
+            <input type="text" id="mis-contact-name" placeholder="Your name" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 font-semibold">Contact Phone</label>
+            <input type="text" id="mis-contact-phone" placeholder="Emergency contact" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+          </div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+          <input type="checkbox" id="mis-consent" checked class="rounded bg-slate-800 text-emerald-500">
+          <span class="text-[11px]">I consent to listing this report with privacy-masked details for authorized disaster reunification.</span>
+        </label>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button onclick="closeReportModal()" class="px-4 py-1.5 rounded bg-slate-800 text-xs font-semibold text-slate-300">Cancel</button>
+        <button onclick="submitMissingReport()" class="px-5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white font-bold text-xs">File Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Safe Arrival -->
+  <div id="modalSafeArrival" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-circle-check text-emerald-400"></i>
+          <span>Confirm Safe Arrival</span>
+        </h3>
+        <button onclick="closeSafeArrivalModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Your Full Name</label>
+          <input type="text" id="arr-name" placeholder="Full name" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Arrival Shelter / Location</label>
+          <input type="text" id="arr-location" placeholder="e.g. City Relief Camp 2" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Message for Family</label>
+          <input type="text" id="arr-msg" value="Safe and uninjured at relief camp." class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button onclick="closeSafeArrivalModal()" class="px-4 py-1.5 rounded bg-slate-800 text-xs font-semibold text-slate-300">Cancel</button>
+        <button onclick="submitSafeArrival()" class="px-5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">Confirm Safe</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/offline-sync.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadMissingReports();
+      await loadSafeArrivals();
+    });
+
+    async function loadMissingReports(query = '') {
+      const cont = document.getElementById('missing-persons-container');
+      try {
+        const url = query ? `/reunification/missing-reports?query=${encodeURIComponent(query)}` : `/reunification/missing-reports`;
+        const list = await API.request(url);
+        document.getElementById('records-count').innerText = `${list ? list.length : 0} Records`;
+
+        cont.innerHTML = (list || []).map(m => {
+          const isLocated = m.status === 'LOCATED' || m.status === 'REUNITED';
+          const badgeClass = isLocated ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-red-950 text-red-400 border-red-800';
+
+          return `
+            <div class="panel-card p-4 space-y-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="text-sm font-bold text-white flex items-center gap-2">
+                    <span>${m.personName}</span>
+                    <span class="text-slate-400 text-xs">(${m.age} yrs • ${m.gender})</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400">Last known: ${m.lastKnownLocation || 'Unknown'}</div>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${m.status}</span>
+              </div>
+              <p class="text-xs text-slate-300 bg-slate-950 p-2 rounded border border-slate-800">${m.physicalDescription || 'No detailed clothing notes recorded.'}</p>
+              <div class="flex justify-between items-center text-[10px] text-slate-500 pt-1 border-t border-slate-800">
+                <span>Contact: ${m.contactPersonName || 'Authorized Official'} • ${m.contactPhone || '112'}</span>
+                <span>${m.verifiedByOfficial ? '✓ Verified by Authorities' : 'Citizen Reported'}</span>
+              </div>
+            </div>
+          `;
+        }).join('') || '<div class="text-slate-500 text-xs p-6 text-center">No missing person reports matching criteria.</div>';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadSafeArrivals() {
+      const cont = document.getElementById('safe-arrivals-container');
+      try {
+        const list = await API.request('/reunification/safe-arrivals');
+        cont.innerHTML = (list || []).map(s => `
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800 text-xs space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-white">${s.personName}</span>
+              <span class="text-[10px] text-emerald-400 font-bold">SAFE</span>
+            </div>
+            <div class="text-[11px] text-slate-300">Checked in at: ${s.arrivalLocation}</div>
+            <div class="text-[10px] text-slate-400 italic">"${s.statusMessage || 'Safe'}"</div>
+          </div>
+        `).join('') || '<div class="text-slate-500 text-xs">No safe arrival notices logged yet.</div>';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function executeSearch() {
+      const q = document.getElementById('missing-search-input').value.trim();
+      loadMissingReports(q);
+    }
+    function clearSearch() {
+      document.getElementById('missing-search-input').value = '';
+      loadMissingReports();
+    }
+
+    function openReportModal() { document.getElementById('modalReportMissing').classList.remove('hidden'); }
+    function closeReportModal() { document.getElementById('modalReportMissing').classList.add('hidden'); }
+    function openSafeArrivalModal() { document.getElementById('modalSafeArrival').classList.remove('hidden'); }
+    function closeSafeArrivalModal() { document.getElementById('modalSafeArrival').classList.add('hidden'); }
+
+    async function submitMissingReport() {
+      const name = document.getElementById('mis-name').value.trim();
+      if (!name) { alert('Please enter name'); return; }
+
+      try {
+        await API.request('/reunification/missing-reports', {
+          method: 'POST',
+          body: JSON.stringify({
+            personName: name,
+            age: parseInt(document.getElementById('mis-age').value) || 30,
+            gender: document.getElementById('mis-gender').value,
+            lastKnownLocation: document.getElementById('mis-loc').value,
+            physicalDescription: document.getElementById('mis-desc').value,
+            contactPersonName: document.getElementById('mis-contact-name').value,
+            contactPhone: document.getElementById('mis-contact-phone').value,
+            consentForPublicListing: document.getElementById('mis-consent').checked
+          })
+        });
+        closeReportModal();
+        alert('Missing person report logged.');
+        loadMissingReports();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function submitSafeArrival() {
+      const name = document.getElementById('arr-name').value.trim();
+      if (!name) { alert('Please enter your name'); return; }
+
+      try {
+        await API.request('/reunification/safe-arrivals', {
+          method: 'POST',
+          body: JSON.stringify({
+            personName: name,
+            arrivalLocation: document.getElementById('arr-location').value,
+            statusMessage: document.getElementById('arr-msg').value
+          })
+        });
+        closeSafeArrivalModal();
+        alert('Safe arrival registered.');
+        loadSafeArrivals();
+        loadMissingReports();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

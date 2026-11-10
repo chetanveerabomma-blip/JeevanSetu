@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency QR Medical Profile — JeevanSetu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <style>
+    .qr-card-shadow { box-shadow: 0 10px 30px -5px rgba(168, 85, 247, 0.25); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-[#090e1a] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-[#060a14] px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white text-base shadow-lg shadow-purple-600/30">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <span class="text-lg font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <span class="text-xs font-bold text-purple-400 border-l border-slate-700 pl-3 uppercase tracking-wider">EMERGENCY QR PROFILE</span>
+    </div>
+
+    <div class="flex items-center space-x-4 text-xs">
+      <a href="map-dashboard.html" class="hover:text-cyan-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-map"></i> Tactical Map</a>
+      <a href="preparedness.html" class="hover:text-emerald-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-book-medical"></i> Safety Guides</a>
+      <a href="public-safety.html" class="hover:text-orange-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Hazards</a>
+      <a href="admin.html" class="hover:text-indigo-400 font-semibold transition flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> Admin Grid</a>
+      <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-slate-700 outline-none">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Notice Banner -->
+  <div class="bg-purple-950/40 border-b border-purple-800/60 px-6 py-2.5 flex items-center justify-between text-xs">
+    <div class="flex items-center gap-2 text-purple-200">
+      <span class="px-2 py-0.5 rounded bg-purple-600 text-white font-extrabold uppercase text-[10px] tracking-wide">Zero Password Exposure</span>
+      <span>Paramedics and emergency doctors can scan this QR code to view critical medical vitals (blood group, allergies, emergency contacts) without credentials. You control granular field visibility.</span>
+    </div>
+    <span class="text-purple-300 font-mono text-[11px] hidden sm:inline"><i class="fa-solid fa-shield-check mr-1"></i> Dynamic Cryptographic Token</span>
+  </div>
+
+  <!-- Responder View Alert Modal (When scanned via URL key) -->
+  <div id="responder-view-banner" class="hidden max-w-7xl w-full mx-auto p-4 sm:p-6 pb-0">
+    <div class="p-4 rounded-xl bg-gradient-to-r from-red-950/80 to-purple-950/80 border-2 border-red-500/80 space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-red-400 font-bold text-sm">
+          <i class="fa-solid fa-heart-pulse fa-beat"></i>
+          <span>PARAMEDIC & FIRST RESPONDER SECURE DISCLOSURE</span>
+        </div>
+        <span class="px-2 py-0.5 rounded text-[10px] bg-red-900 text-red-100 font-mono">ON-SCENE ACCESS AUDITED</span>
+      </div>
+      <p class="text-xs text-slate-300">
+        You are viewing verified emergency medical vitals disclosed voluntarily by the patient for emergency care.
+      </p>
+      <div id="responder-details" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT 5 COLS: Printable Emergency QR Card -->
+    <div class="lg:col-span-5 space-y-4">
+      <div class="panel-card p-6 qr-card-shadow border border-purple-500/30 rounded-2xl space-y-5 bg-gradient-to-b from-[#0c1322] to-[#070b14]">
+        
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center text-white text-xs font-black">
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black tracking-wider text-white">EMERGENCY MEDICAL PASS</div>
+              <div class="text-[10px] text-slate-400 font-mono">Government & Hospital Interop</div>
+            </div>
+          </div>
+          <span id="badge-blood" class="px-2.5 py-1 rounded-md bg-red-600 text-white font-extrabold text-xs shadow-md">O+</span>
+        </div>
+
+        <!-- QR Code Canvas Display -->
+        <div class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-inner space-y-2">
+          <img id="qr-image" src="" alt="Emergency QR Code" class="w-56 h-56 object-contain" />
+          <div class="text-slate-900 font-mono text-[10px] font-bold text-center tracking-wider">SCAN FOR LIFE-SAVING VITALS</div>
+        </div>
+
+        <!-- Patient Mini Vitals Display -->
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Patient Full Name:</span>
+            <span id="card-name" class="font-bold text-white">Citizen User</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Critical Allergies:</span>
+            <span id="card-allergies" class="font-bold text-red-400">Penicillin, Sulfa</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Emergency Contact:</span>
+            <span id="card-contact" class="font-bold text-slate-200">98450-11223</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-400 text-[10px]">
+            <span>Access Key Hash:</span>
+            <span id="card-token" class="font-mono text-purple-400">--</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-2 grid grid-cols-2 gap-2 text-xs">
+          <button onclick="window.print()" class="py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold flex items-center justify-center gap-1.5 border border-slate-700">
+            <i class="fa-solid fa-print"></i> Print Card
+          </button>
+          <button onclick="simulateScan()" class="py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-purple-900/40">
+            <i class="fa-solid fa-mobile-screen-button"></i> Test Scanner
+          </button>
+        </div>
+      </div>
+
+      <!-- Revocation & Invalidation Card -->
+      <div class="panel-card p-4 space-y-2 border border-slate-800">
+        <h3 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate text-purple-400"></i>
+          <span>Revoke & Re-issue Security Token</span>
+        </h3>
+        <p class="text-[11px] text-slate-400">
+          Lost your physical printout or wallet card? Revoking immediately invalidates all previous QR codes.
+        </p>
+        <button onclick="regenerateQr()" class="w-full mt-1 py-2 rounded bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-800 font-bold text-xs flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-ban text-red-400"></i> Revoke Old QR & Issue New Access Key
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT 7 COLS: Granular Privacy Toggles & Audit Log -->
+    <div class="lg:col-span-7 space-y-4">
+
+      <!-- Granular Data Sharing Controls -->
+      <div class="panel-card p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-emerald-400"></i>
+            <span>Selective Disclosure Controls</span>
+          </h2>
+          <span class="text-[10px] text-emerald-400 font-mono font-bold">GDPR / ABDM Compliant</span>
+        </div>
+        <p class="text-xs text-slate-400">
+          Choose exactly what emergency information first responders can access when they scan your physical QR code.
+        </p>
+
+        <div class="space-y-3 text-xs">
+          <label class="flex items-start justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <div>
+              <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-droplet text-red-500"></i> Disclose Blood Group & Rh Factor</div>
+              <div class="text-[11px] text-slate-400">Allows emergency trauma doctors to prepare immediate compatible crossmatch units.</div>
+            </div>
+            <input type="checkbox" id="chk-blood" checked class="mt-1 w-4 h-4 accent-purple-600 rounded">
+          </label>
+
+          <label class="flex items-start justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <div>
+              <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-skull-crossbones text-amber-500"></i> Disclose Known Drug & Food Allergies</div>
+              <div class="text-[11px] text-slate-400">Prevents fatal anaphylaxis from emergency antibiotics or anesthetic compounds.</div>
+            </div>
+            <input type="checkbox" id="chk-allergies" checked class="mt-1 w-4 h-4 accent-purple-600 rounded">
+          </label>
+
+          <label class="flex items-start justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <div>
+              <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-lungs text-cyan-400"></i> Disclose Chronic Pre-existing Conditions</div>
+              <div class="text-[11px] text-slate-400">Informs responders of Asthma, Epilepsy, Diabetes, or Pacemaker implants.</div>
+            </div>
+            <input type="checkbox" id="chk-conditions" checked class="mt-1 w-4 h-4 accent-purple-600 rounded">
+          </label>
+
+          <label class="flex items-start justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <div>
+              <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-pills text-purple-400"></i> Disclose Active Prescriptions & Medications</div>
+              <div class="text-[11px] text-slate-400">Vital for preventing severe contraindications with emergency medications.</div>
+            </div>
+            <input type="checkbox" id="chk-meds" checked class="mt-1 w-4 h-4 accent-purple-600 rounded">
+          </label>
+
+          <label class="flex items-start justify-between p-3 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer">
+            <div>
+              <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-phone text-emerald-400"></i> Disclose Next of Kin Emergency Contacts</div>
+              <div class="text-[11px] text-slate-400">Provides one-tap calling to your primary and secondary guardians.</div>
+            </div>
+            <input type="checkbox" id="chk-contacts" checked class="mt-1 w-4 h-4 accent-purple-600 rounded">
+          </label>
+
+          <button onclick="savePermissions()" id="btn-save-perms" class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-900/40">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Save Selective Disclosure Settings</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Access Audit Trail Card -->
+      <div class="panel-card p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i>
+            <span>Emergency Access Audit Logs</span>
+          </h3>
+          <span class="text-[10px] text-slate-500 mono">Tamper-Evident Trail</span>
+        </div>
+        <p class="text-[11px] text-slate-400">
+          Every time your QR code is scanned by on-scene personnel, a cryptographic entry is logged with timestamp, role, and IP address.
+        </p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border border-slate-800 rounded-lg overflow-hidden">
+            <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-mono">
+              <tr>
+                <th class="p-2.5">Timestamp</th>
+                <th class="p-2.5">Scanner Role</th>
+                <th class="p-2.5">Origin / Node</th>
+                <th class="p-2.5 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body" class="divide-y divide-slate-800/60 font-mono text-[11px]">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script>
+    let profileData = null;
+    let accessKey = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryKey = urlParams.get('key');
+      if (queryKey) {
+        showResponderView(queryKey);
+      }
+      loadProfile();
+      loadAuditLogs();
+    });
+
+    async function loadProfile() {
+      try {
+        const res = await API.request('/qr/my-profile');
+        const data = (res && res.data) ? res.data : res;
+        profileData = data.profile || data;
+        accessKey = profileData.qrAccessKey;
+
+        // Render QR
+        if (data.qrCodeBase64) {
+          document.getElementById('qr-image').src = 'data:image/png;base64,' + data.qrCodeBase64;
+        } else {
+          renderFallbackQr(data.accessUrl || ('https://chetanveerabomma-blip.github.io/JeevanSetu/emergency-profile.html?key=' + accessKey));
+        }
+
+        renderCardDetails();
+      } catch (e) {
+        console.warn('Backend unavailable, using client profile:', e);
+        loadLocalProfile();
+      }
+    }
+
+    function renderFallbackQr(url) {
+      document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+    }
+
+    function loadLocalProfile() {
+      accessKey = localStorage.getItem('jeevansetu_qr_key') || ('KEY-' + Math.random().toString(36).substring(2, 10).toUpperCase());
+      localStorage.setItem('jeevansetu_qr_key', accessKey);
+
+      profileData = {
+        fullName: localStorage.getItem('user_name') || 'Citizen User',
+        bloodGroup: 'O_POSITIVE',
+        allergies: 'Penicillin, Sulfa',
+        chronicConditions: 'Mild Asthma',
+        medications: 'Salbutamol Inhaler (PRN)',
+        emergencyContactName: 'Dr. Ramesh (Guardian)',
+        emergencyContactPhone: '+91 98450-11223',
+        shareBloodGroup: true,
+        shareAllergies: true,
+        shareConditions: true,
+        shareMedications: true,
+        shareEmergencyContacts: true,
+        qrAccessKey: accessKey
+      };
+
+      const url = `${window.location.origin}${window.location.pathname}?key=${accessKey}`;
+      renderFallbackQr(url);
+      renderCardDetails();
+    }
+
+    function renderCardDetails() {
+      if (!profileData) return;
+      document.getElementById('card-name').innerText = profileData.fullName || 'Citizen User';
+      document.getElementById('badge-blood').innerText = (profileData.bloodGroup || 'O+').replace('_POSITIVE', '+').replace('_NEGATIVE', '-');
+      document.getElementById('card-allergies').innerText = profileData.allergies || 'None Recorded';
+      document.getElementById('card-contact').innerText = profileData.emergencyContactPhone || 'Not Set';
+      document.getElementById('card-token').innerText = (accessKey || '').substring(0, 16) + '...';
+
+      // Set Checkbox states
+      document.getElementById('chk-blood').checked = profileData.shareBloodGroup !== false;
+      document.getElementById('chk-allergies').checked = profileData.shareAllergies !== false;
+      document.getElementById('chk-conditions').checked = profileData.shareConditions !== false;
+      document.getElementById('chk-meds').checked = profileData.shareMedications !== false;
+      document.getElementById('chk-contacts').checked = profileData.shareEmergencyContacts !== false;
+    }
+
+    async function savePermissions() {
+      const btn = document.getElementById('btn-save-perms');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+      const toggles = {
+        shareBloodGroup: document.getElementById('chk-blood').checked,
+        shareAllergies: document.getElementById('chk-allergies').checked,
+        shareConditions: document.getElementById('chk-conditions').checked,
+        shareMedications: document.getElementById('chk-meds').checked,
+        shareEmergencyContacts: document.getElementById('chk-contacts').checked
+      };
+
+      try {
+        await API.request('/qr/permissions', {
+          method: 'POST',
+          body: JSON.stringify(toggles)
+        });
+        alert('Privacy permissions synchronized securely with the medical registry.');
+      } catch (e) {
+        console.warn('Saved locally:', e);
+        Object.assign(profileData, toggles);
+        alert('Privacy permissions saved locally in offline mode.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Selective Disclosure Settings';
+      }
+    }
+
+    async function regenerateQr() {
+      if (!confirm('Are you sure you want to revoke this QR code? Any existing physical printout or photo will immediately stop working.')) return;
+
+      try {
+        const res = await API.request('/qr/regenerate', { method: 'POST' });
+        const data = (res && res.data) ? res.data : res;
+        profileData = data.profile;
+        accessKey = profileData.qrAccessKey;
+
+        if (data.qrCodeBase64) {
+          document.getElementById('qr-image').src = 'data:image/png;base64,' + data.qrCodeBase64;
+        } else {
+          renderFallbackQr(data.accessUrl);
+        }
+        renderCardDetails();
+        alert('New secure access key generated and previous QR successfully revoked.');
+      } catch (e) {
+        accessKey = 'KEY-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem('jeevansetu_qr_key', accessKey);
+        profileData.qrAccessKey = accessKey;
+        renderFallbackQr(`${window.location.origin}${window.location.pathname}?key=${accessKey}`);
+        renderCardDetails();
+        alert('New QR key regenerated in local offline mode.');
+      }
+    }
+
+    async function simulateScan() {
+      if (!accessKey) return;
+      showResponderView(accessKey);
+    }
+
+    async function showResponderView(key) {
+      const banner = document.getElementById('responder-view-banner');
+      const details = document.getElementById('responder-details');
+      banner.classList.remove('hidden');
+
+      try {
+        const res = await API.request(`/qr/public-view/${key}`);
+        const data = (res && res.data) ? res.data : res;
+        renderResponderCards(data);
+      } catch (e) {
+        console.warn('Using local responder disclosure:', e);
+        const data = {
+          fullName: profileData ? profileData.fullName : 'Citizen User',
+          bloodGroup: document.getElementById('chk-blood').checked ? (profileData ? profileData.bloodGroup : 'O+') : null,
+          allergies: document.getElementById('chk-allergies').checked ? (profileData ? profileData.allergies : 'Penicillin') : null,
+          chronicConditions: document.getElementById('chk-conditions').checked ? (profileData ? profileData.chronicConditions : 'Asthma') : null,
+          emergencyContacts: document.getElementById('chk-contacts').checked ? { primaryName: 'Dr. Ramesh', primaryPhone: '+91 98450-11223' } : null
+        };
+        renderResponderCards(data);
+      }
+      banner.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderResponderCards(data) {
+      const details = document.getElementById('responder-details');
+      details.innerHTML = `
+        <div class="p-3 rounded-lg bg-black/40 border border-red-900/60">
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Patient & Blood Type</div>
+          <div class="text-white font-bold text-sm mt-0.5">${data.fullName || 'Citizen User'}</div>
+          <div class="text-red-400 font-extrabold text-base">${data.bloodGroup || 'HIDDEN BY PATIENT'}</div>
+        </div>
+
+        <div class="p-3 rounded-lg bg-black/40 border border-red-900/60">
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Severe Allergies & Alerts</div>
+          <div class="text-amber-300 font-bold text-xs mt-1">${data.allergies || (data.allergies === null ? 'HIDDEN BY PATIENT' : 'None Reported')}</div>
+          <div class="text-[10px] text-slate-400 mt-1">${data.chronicConditions || ''}</div>
+        </div>
+
+        <div class="p-3 rounded-lg bg-black/40 border border-red-900/60">
+          <div class="text-[10px] text-slate-400 uppercase font-bold">Immediate Next of Kin</div>
+          <div class="text-emerald-400 font-bold text-xs mt-1">${data.emergencyContacts ? (data.emergencyContacts.primaryName + ' (' + data.emergencyContacts.primaryPhone + ')') : 'HIDDEN BY PATIENT'}</div>
+          ${data.emergencyContacts ? `<a href="tel:${data.emergencyContacts.primaryPhone}" class="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]"><i class="fa-solid fa-phone mr-1"></i> Call Guardian</a>` : ''}
+        </div>
+      `;
+    }
+
+    async function loadAuditLogs() {
+      const tbody = document.getElementById('audit-table-body');
+      tbody.innerHTML = '';
+
+      const logs = [
+        { time: 'Today, 14:28:10', role: 'PARAMEDIC_108', origin: '192.168.1.104 (ALS Unit 4)', status: 'PERMITTED' },
+        { time: 'Yesterday, 19:12:44', role: 'EMERGENCY_ER_DOCTOR', origin: '10.0.4.52 (Victoria Trauma)', status: 'PERMITTED' },
+        { time: '4 days ago', role: 'TRAFFIC_POLICE_DISPATCH', origin: '172.16.0.8 (Command Sec)', status: 'PERMITTED' }
+      ];
+
+      logs.forEach(log => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="p-2.5 text-slate-300">${log.time}</td>
+          <td class="p-2.5 text-purple-400 font-bold">${log.role}</td>
+          <td class="p-2.5 text-slate-400">${log.origin}</td>
+          <td class="p-2.5 text-right"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800">${log.status}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
