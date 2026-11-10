@@ -54,6 +54,10 @@ public class WebSocketEventPublisher {
         publishEvent("/topic/emergencies", "EMERGENCY_CREATED", sosAlert);
     }
 
+    public void publish(String eventType, Object payload) {
+        publishEvent("/topic/events", eventType, payload);
+    }
+
     private void publishEvent(String destination, String eventType, Object payload) {
         try {
             Map<String, Object> message = new HashMap<>();

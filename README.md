@@ -56,7 +56,34 @@
 
 ---
 
-## 🧠 Advanced Computer Science Algorithms Implemented
+## 🧠 Advanced Computer Science Algorithms & 18 Operational Modules
+
+### The 18 Specialized Enterprise Modules Implemented:
+
+| # | Enterprise Module | Core Java / Tech Implementation | Key Features |
+|---|---|---|---|
+| **1** | **Incident Command Centre** | `IncidentCommandService`, `IncidentAssignmentService`, `IncidentTimelineService` | Central dispatch grid, timeline tracking, remarks, agency assignment. |
+| **2** | **Automatic Emergency Escalation** | `EmergencyEscalationScheduler` (`@Scheduled(fixedRate=30000)`) | Auto-escalation of unassigned cases per threshold; overdue alerts & dispatcher ack. |
+| **3** | **Volunteer Coordination System** | `VolunteerService`, `VolunteerAssignmentService`, `VolunteerController` | Volunteer registration, profile privacy, skill mapping, non-hazard task proposals & approval. |
+| **4** | **Disaster Management & Relief Centre** | `DisasterManagementService`, `DisasterEventRepository`, `ReliefCenterRepository` | Flood/fire/cyclone declarations, relief camp occupancy tracking, relief distribution requests. |
+| **5** | **Emergency Resource Inventory** | `InventoryService`, `InventoryItemRepository`, `InventoryTransactionRepository` | Central medical/ration stock tracking, minimum safety thresholds, real-time low-stock alerts. |
+| **6** | **Geo-Fencing & Location Alerts** | `GeoFenceService`, `GeoZoneRepository` | Haversine formula geospatial radius checks, danger zones, evacuation alerts. |
+| **7** | **Duplicate Emergency Detection** | `DuplicateDetectionService` | Multi-criteria duplicate scanner: distance + category + Dice token similarity + time window. |
+| **8** | **Offline Emergency Reporting** | `frontend/js/offline-sync.js` (IndexedDB / localStorage) | Draft preservation during disconnections, network state detection, automatic sync with client UUID. |
+| **9** | **Emergency Tactical Communication** | `IncidentChatService`, `IncidentChatMessageRepository`, WebSocket | Incident-specific chat rooms, role & agency tagged messages, read status tracking. |
+| **10** | **Smart Resource Allocation Engine** | `ResourceSuitabilityScorer`, `ResourceService` | Multi-factor suitability scoring (distance, equipment, workload, availability) with dispatcher signoff. |
+| **11** | **AI Emergency Report Analyzer** | Python FastAPI (`/api/assistant/*`) + Java validation | Natural language parsing, entity/location/urgency extraction, structured fact extraction. |
+| **12** | **Emergency Voice Reporting** | Web Speech API STT + TTS | Hands-free reporting in English, Hindi, Telugu, and Tamil with pre-dispatch verbal confirmation. |
+| **13** | **Blood Donor & Blood Bank Coordination** | `BloodDonorCoordinationService`, `BloodDonorRepository` | Privacy-masked donor registry within radius, blood group matching, emergency hospital requests. |
+| **14** | **Emergency Notification System** | `NotificationService`, `NotificationController` | In-app alerts, WebSocket broadcasts, category filtering, unread counters and receipts. |
+| **15** | **Advanced Analytics & Reports** | `AnalyticsService`, `AnalyticsController` | Real database timestamp aggregations, response/dispatch time computation, CSV & executive summary export. |
+| **16** | **Ambulance & Vehicle Maintenance** | `VehicleMaintenanceService`, `VehicleRecordRepository` | Fleet maintenance tracking (`ACTIVE`, `MAINTENANCE`, `OUT_OF_SERVICE`); excluded from dispatch queues. |
+| **17** | **Advanced Security & Audit System** | `SecurityConfig`, `JwtAuthenticationFilter`, `AuditLogService` | Stateless JWT authentication, role-based access control (RBAC), immutable audit log trail. |
+| **18** | **System Administrator Dashboard** | `frontend/admin.html`, `AdminController` | 9-tab operations console managing all 18 modules with real-time live database telemetry. |
+
+---
+
+## 🔬 Core Computer Science Algorithms Implemented
 
 1. **Java Thread-Safe Priority Queue (`EmergencyPriorityQueue`)**:
    - In-memory triage queue backed by `java.util.PriorityQueue` and custom dynamic comparator.
@@ -68,7 +95,11 @@
    - Transparent ranking with reasoning badges (e.g. *\"Rank #1: Unit AMB-104, 2.4 km away, ALS equipped, available immediately\"*).
 4. **Road Graph Representation & Dijkstra Shortest Path (`DijkstraRouter`)**:
    - Adjacency-list directed graph model with edge weights factoring distance and congestion multipliers. Computes exact route waypoints for map rendering.
-5. **MongoDB Geospatial Indexing (`2dsphere`)**:
+5. **Haversine Geospatial Geofence Engine (`GeoFenceService`)**:
+   - Spherical trigonometric distance formula calculating danger zones, safe corridors, and proximity alerts without external GIS server dependencies.
+6. **Dice Coefficient NLP Token Matcher (`DuplicateDetectionService`)**:
+   - String bigram similarity scoring combined with spatial distance thresholding to detect duplicate caller reports.
+7. **MongoDB Geospatial Indexing (`2dsphere`)**:
    - Spherical radius search (`$nearSphere`) querying verified trauma centers, blood banks, and responder units within regional radii.
 
 ---

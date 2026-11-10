@@ -15,6 +15,7 @@ public class EmergencyReportRequest {
     private boolean fireInvolved;
     private boolean trapped;
     private String additionalInfo;
+    private String clientGeneratedId;
 
     public EmergencyReportRequest() {}
 
@@ -53,4 +54,7 @@ public class EmergencyReportRequest {
 
     public String getAdditionalInfo() { return additionalInfo; }
     public void setAdditionalInfo(String additionalInfo) { this.additionalInfo = additionalInfo; }
+
+    public String getClientGeneratedId() { return clientGeneratedId; }
+    public void setClientGeneratedId(String clientGeneratedId) { this.clientGeneratedId = clientGeneratedId; }
 }

@@ -50,6 +50,22 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/ws/**").permitAll()
 
+                        // Public read-only queries for home page telemetry & maps
+                        .requestMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/resources/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/hospitals/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blood-banks/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/shelters/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/emergencies/priority-queue").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/geofence/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/disaster/events").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/disaster/centers").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/disaster/overview").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/inventory/overview").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/volunteers/overview").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blood-coordination/overview").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/emergencies/check-duplicate").permitAll()
+
                         // Static web frontend assets
                         .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/assets/**", "/favicon.ico").permitAll()
 

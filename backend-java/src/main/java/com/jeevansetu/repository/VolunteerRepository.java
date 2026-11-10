@@ -15,4 +15,7 @@ public interface VolunteerRepository extends MongoRepository<Volunteer, String> 
     List<Volunteer> findByAvailabilityStatus(String availabilityStatus);
     List<Volunteer> findByLocationNear(Point point, Distance distance);
     List<Volunteer> findBySkillsContaining(String skill);
+    Optional<Volunteer> findByUserId(String userId);
+    Optional<Volunteer> findByEmail(String email);
+    long countByAvailabilityStatus(String availabilityStatus);
 }

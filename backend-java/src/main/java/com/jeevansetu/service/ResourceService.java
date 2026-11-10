@@ -83,7 +83,12 @@ public class ResourceService {
                 ? responderUnitRepository.findByType(type)
                 : responderUnitRepository.findAll();
 
-        return suitabilityScorer.rankResources(emergency, candidates);
+        // Exclude units undergoing vehicle maintenance or offline
+        List<ResponderUnit> eligibleCandidates = candidates.stream()
+                .filter(u -> u.getStatus() != ResourceStatus.MAINTENANCE && u.getStatus() != ResourceStatus.OFFLINE)
+                .toList();
+
+        return suitabilityScorer.rankResources(emergency, eligibleCandidates);
     }
 
     /**

@@ -60,6 +60,19 @@ public class Emergency {
     private String aiSeverity;
     private String aiSummary;
 
+    // Advanced Incident Command & Escalation Fields
+    private String dispatcherRemarks;
+    private String assignedAgency;
+    private boolean escalated = false;
+    private Instant escalatedAt;
+    private int escalationLevel = 0; // 0 = Normal, 1 = Overdue Warning, 2 = Critical Overdue
+    private boolean escalationAcknowledged = false;
+    private String escalationAcknowledgedBy;
+
+    // Offline Synchronization Idempotency Key
+    @Indexed(sparse = true)
+    private String clientGeneratedId;
+
     public Emergency() {}
 
     public String getId() { return id; }
@@ -161,4 +174,28 @@ public class Emergency {
 
     public String getAiSummary() { return aiSummary; }
     public void setAiSummary(String aiSummary) { this.aiSummary = aiSummary; }
+
+    public String getDispatcherRemarks() { return dispatcherRemarks; }
+    public void setDispatcherRemarks(String dispatcherRemarks) { this.dispatcherRemarks = dispatcherRemarks; }
+
+    public String getAssignedAgency() { return assignedAgency; }
+    public void setAssignedAgency(String assignedAgency) { this.assignedAgency = assignedAgency; }
+
+    public boolean isEscalated() { return escalated; }
+    public void setEscalated(boolean escalated) { this.escalated = escalated; }
+
+    public Instant getEscalatedAt() { return escalatedAt; }
+    public void setEscalatedAt(Instant escalatedAt) { this.escalatedAt = escalatedAt; }
+
+    public int getEscalationLevel() { return escalationLevel; }
+    public void setEscalationLevel(int escalationLevel) { this.escalationLevel = escalationLevel; }
+
+    public boolean isEscalationAcknowledged() { return escalationAcknowledged; }
+    public void setEscalationAcknowledged(boolean escalationAcknowledged) { this.escalationAcknowledged = escalationAcknowledged; }
+
+    public String getEscalationAcknowledgedBy() { return escalationAcknowledgedBy; }
+    public void setEscalationAcknowledgedBy(String escalationAcknowledgedBy) { this.escalationAcknowledgedBy = escalationAcknowledgedBy; }
+
+    public String getClientGeneratedId() { return clientGeneratedId; }
+    public void setClientGeneratedId(String clientGeneratedId) { this.clientGeneratedId = clientGeneratedId; }
 }

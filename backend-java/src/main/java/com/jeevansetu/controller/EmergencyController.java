@@ -1,12 +1,15 @@
 package com.jeevansetu.controller;
 
 import com.jeevansetu.dto.ApiResponse;
+import com.jeevansetu.dto.DuplicateMatchResult;
 import com.jeevansetu.dto.EmergencyReportRequest;
 import com.jeevansetu.model.Emergency;
 import com.jeevansetu.model.EmergencyStatus;
+import com.jeevansetu.model.EmergencyType;
 import com.jeevansetu.model.IncidentUpdate;
 import com.jeevansetu.model.User;
 import com.jeevansetu.repository.UserRepository;
+import com.jeevansetu.service.DuplicateDetectionService;
 import com.jeevansetu.service.EmergencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,10 +28,12 @@ public class EmergencyController {
 
     private final EmergencyService emergencyService;
     private final UserRepository userRepository;
+    private final DuplicateDetectionService duplicateDetectionService;
 
-    public EmergencyController(EmergencyService emergencyService, UserRepository userRepository) {
+    public EmergencyController(EmergencyService emergencyService, UserRepository userRepository, DuplicateDetectionService duplicateDetectionService) {
         this.emergencyService = emergencyService;
         this.userRepository = userRepository;
+        this.duplicateDetectionService = duplicateDetectionService;
     }
 
     @PostMapping("/report")
@@ -123,5 +128,26 @@ public class EmergencyController {
     @Operation(summary = "Get complete chronological audit timeline of an incident")
     public ResponseEntity<ApiResponse<List<IncidentUpdate>>> getTimeline(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.ok(emergencyService.getIncidentTimeline(id)));
+    }
+
+    @PostMapping("/check-duplicate")
+    @Operation(summary = "Check for possible duplicate incidents using spatial, temporal, and NLP text similarity")
+    public ResponseEntity<ApiResponse<List<DuplicateMatchResult>>> checkDuplicate(
+            @RequestBody Map<String, Object> body) {
+        double lat = Double.parseDouble(body.getOrDefault("latitude", 0).toString());
+        double lng = Double.parseDouble(body.getOrDefault("longitude", 0).toString());
+        String typeStr = (String) body.getOrDefault("type", "MEDICAL");
+        String description = (String) body.getOrDefault("description", "");
+
+        EmergencyType type;
+        try {
+            type = EmergencyType.valueOf(typeStr.toUpperCase());
+        } catch (Exception ex) {
+            type = EmergencyType.MEDICAL;
+        }
+
+        List<DuplicateMatchResult> matches = duplicateDetectionService.checkPotentialDuplicates(lat, lng, type, description, java.time.Instant.now());
+        String message = matches.isEmpty() ? "No duplicate incidents detected." : "⚠️ Possible similar emergency reports found (" + matches.size() + " matches)";
+        return ResponseEntity.ok(ApiResponse.ok(message, matches));
     }
 }

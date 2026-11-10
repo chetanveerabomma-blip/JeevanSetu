@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.Year;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
@@ -60,7 +61,16 @@ public class EmergencyService {
     }
 
     public Emergency reportEmergency(EmergencyReportRequest req, String userId, String userEmail, String userName, String userPhone) {
+        // Idempotency check for offline synchronization
+        if (req.getClientGeneratedId() != null && !req.getClientGeneratedId().isBlank()) {
+            Optional<Emergency> existing = emergencyRepository.findByClientGeneratedId(req.getClientGeneratedId());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
         Emergency emergency = new Emergency();
+        emergency.setClientGeneratedId(req.getClientGeneratedId());
         emergency.setIncidentCode(generateIncidentCode());
         emergency.setType(req.getType() != null ? req.getType() : EmergencyType.MEDICAL);
         emergency.setDescription(req.getDescription());

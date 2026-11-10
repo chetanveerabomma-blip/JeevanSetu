@@ -21,4 +21,5 @@ public interface ResponderUnitRepository extends MongoRepository<ResponderUnit, 
     List<ResponderUnit> findByTypeAndStatusAndLocationNear(ResourceType type, ResourceStatus status, Point point, Distance distance);
     Optional<ResponderUnit> findByCurrentIncidentId(String incidentId);
     long countByTypeAndStatus(ResourceType type, ResourceStatus status);
+    long countByStatus(ResourceStatus status);
 }

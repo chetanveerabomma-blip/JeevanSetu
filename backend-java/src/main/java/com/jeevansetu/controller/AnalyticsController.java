@@ -43,4 +43,23 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "50") int limit) {
         return ResponseEntity.ok(ApiResponse.ok(auditLogService.getRecentLogs(limit)));
     }
+
+    @GetMapping(value = "/export/csv", produces = "text/csv")
+    @Operation(summary = "Export incidents to CSV for audits and external reporting")
+    public ResponseEntity<String> exportCsv(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant endDate) {
+        String csv = analyticsService.exportIncidentsCsv(startDate, endDate);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"jeevansetu_incidents.csv\"")
+                .body(csv);
+    }
+
+    @GetMapping("/reports/summary")
+    @Operation(summary = "Generate structured executive emergency management briefing report")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getExecutiveReport(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant endDate) {
+        return ResponseEntity.ok(ApiResponse.ok(analyticsService.generateExecutiveReport(startDate, endDate)));
+    }
 }

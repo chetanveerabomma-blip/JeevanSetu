@@ -9,5 +9,7 @@ public enum Role {
     BLOOD_BANK,
     VOLUNTEER,
     CONTROL_CENTER,
+    DISPATCHER,
+    RELIEF_MANAGER,
     ADMIN
 }

@@ -38,6 +38,12 @@ public class Volunteer {
     private String activeIncidentId;
     private Instant registeredAt = Instant.now();
 
+    private String bloodGroup; // Voluntarily provided
+    private String serviceArea; // City / District
+    private String userId; // Associated User account
+    private int completedTasksCount = 0;
+    private double rating = 5.0;
+
     public Volunteer() {}
 
     public String getId() { return id; }
@@ -94,4 +100,19 @@ public class Volunteer {
 
     public Instant getRegisteredAt() { return registeredAt; }
     public void setRegisteredAt(Instant registeredAt) { this.registeredAt = registeredAt; }
+
+    public String getBloodGroup() { return bloodGroup; }
+    public void setBloodGroup(String bloodGroup) { this.bloodGroup = bloodGroup; }
+
+    public String getServiceArea() { return serviceArea; }
+    public void setServiceArea(String serviceArea) { this.serviceArea = serviceArea; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public int getCompletedTasksCount() { return completedTasksCount; }
+    public void setCompletedTasksCount(int completedTasksCount) { this.completedTasksCount = completedTasksCount; }
+
+    public double getRating() { return rating; }
+    public void setRating(double rating) { this.rating = rating; }
 }

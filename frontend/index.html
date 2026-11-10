@@ -32,22 +32,32 @@
       </a>
 
       <!-- Desktop Nav Links -->
-      <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
+      <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
         <a href="#home" class="hover:text-white transition">Home</a>
         <a href="#how-it-works" class="hover:text-white transition">How It Works</a>
         <a href="#services" class="hover:text-white transition">Emergency Services</a>
         <a href="command-center.html" class="hover:text-white text-cyan-400 font-semibold flex items-center gap-1.5 transition">
           <i class="fa-solid fa-satellite-dish animate-pulse"></i> Command Center
         </a>
+        <a href="admin.html" class="hover:text-white text-purple-400 font-semibold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-shield-halved"></i> Admin Console
+        </a>
         <a href="analytics.html" class="hover:text-white transition">Analytics</a>
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center space-x-4">
-        <a href="login.html" class="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition">
+      <div class="flex items-center space-x-3">
+        <!-- Language Switcher -->
+        <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1.5 border border-slate-700 outline-none">
+          <option value="en">English (EN)</option>
+          <option value="hi">हिंदी (HI)</option>
+          <option value="te">తెలుగు (TE)</option>
+          <option value="ta">தமிழ் (TA)</option>
+        </select>
+        <a href="login.html" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition">
           LOGIN
         </a>
-        <a href="citizen.html" class="btn-emergency px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2">
+        <a href="citizen.html" class="btn-emergency px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span>REPORT EMERGENCY</span>
         </a>
@@ -271,6 +281,7 @@
   </footer>
 
   <script src="js/api.js"></script>
+  <script src="js/offline-sync.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/chatbot.js"></script>
   <script>

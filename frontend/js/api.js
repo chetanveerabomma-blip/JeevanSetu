@@ -520,6 +520,273 @@ const API = {
       };
     }
 
+    // 17. Duplicate Emergency Detection
+    if (endpoint === '/emergencies/check-duplicate') {
+      const body = JSON.parse(options.body || '{}');
+      const matches = store.emergencies.filter(e => {
+        if (!e.latitude || !body.latitude) return false;
+        const dLat = (e.latitude - body.latitude) * 111;
+        const dLng = (e.longitude - body.longitude) * 111 * Math.cos(e.latitude * Math.PI / 180);
+        const distKm = Math.sqrt(dLat * dLat + dLng * dLng);
+        return distKm <= 0.5 && e.status !== 'RESOLVED';
+      });
+      if (matches.length > 0) {
+        return {
+          duplicateSuspected: true,
+          matchConfidenceScore: 0.88,
+          matchedIncidentCode: matches[0].incidentCode,
+          matchedIncidentId: matches[0].id,
+          explanation: `High proximity (${matches.length} active incident within 500m)`
+        };
+      }
+      return { duplicateSuspected: false, matchConfidenceScore: 0.1, explanation: 'No close duplicates found' };
+    }
+
+    // 18. Incident Command Centre
+    if (endpoint === '/command/overview') {
+      const active = store.emergencies.filter(e => e.status !== 'RESOLVED').length;
+      const crit = store.emergencies.filter(e => e.priority === 'CRITICAL' && e.status !== 'RESOLVED').length;
+      return {
+        totalEmergencies: store.emergencies.length,
+        activeEmergencies: active,
+        criticalEmergencies: crit,
+        escalatedEmergencies: store.emergencies.filter(e => e.escalated).length,
+        resolvedEmergencies: store.emergencies.filter(e => e.status === 'RESOLVED').length,
+        availableAmbulances: store.responders.filter(r => r.type === 'AMBULANCE' && r.status === 'AVAILABLE').length,
+        availablePoliceUnits: store.responders.filter(r => r.type === 'POLICE' && r.status === 'AVAILABLE').length,
+        availableFireUnits: store.responders.filter(r => r.type === 'FIRE_UNIT' && r.status === 'AVAILABLE').length
+      };
+    }
+
+    if (endpoint === '/command/incidents') {
+      return store.emergencies;
+    }
+
+    if (endpoint.includes('/command/') && endpoint.endsWith('/assign-agency')) {
+      const parts = endpoint.split('/');
+      const emgId = parts[2];
+      const body = JSON.parse(options.body || '{}');
+      const emg = store.emergencies.find(e => e.id === emgId);
+      if (emg) {
+        emg.assignedAgency = body.agency;
+        emg.status = 'ASSIGNED';
+        if (body.remarks) emg.dispatcherRemarks = body.remarks;
+      }
+      this.saveLocalStore(store);
+      return emg || {};
+    }
+
+    if (endpoint.includes('/command/') && endpoint.endsWith('/escalate')) {
+      const parts = endpoint.split('/');
+      const emgId = parts[2];
+      const emg = store.emergencies.find(e => e.id === emgId);
+      if (emg) {
+        emg.escalated = true;
+        emg.escalationLevel = (emg.escalationLevel || 0) + 1;
+        emg.escalatedAt = new Date().toISOString();
+      }
+      this.saveLocalStore(store);
+      return emg || {};
+    }
+
+    if (endpoint.includes('/command/') && endpoint.endsWith('/acknowledge-escalation')) {
+      const parts = endpoint.split('/');
+      const emgId = parts[2];
+      const emg = store.emergencies.find(e => e.id === emgId);
+      if (emg) {
+        emg.escalationAcknowledged = true;
+      }
+      this.saveLocalStore(store);
+      return emg || {};
+    }
+
+    if (endpoint.includes('/command/') && endpoint.endsWith('/resolve')) {
+      const parts = endpoint.split('/');
+      const emgId = parts[2];
+      const emg = store.emergencies.find(e => e.id === emgId);
+      if (emg) {
+        emg.status = 'RESOLVED';
+      }
+      this.saveLocalStore(store);
+      return emg || {};
+    }
+
+    // 19. Volunteers & Tasks
+    if (endpoint === '/volunteers') {
+      return store.volunteers || [];
+    }
+
+    if (endpoint === '/volunteers/tasks/available' || endpoint === '/volunteers/tasks/pending-approval') {
+      return store.volunteerTasks || [
+        { id: 'vt-1', title: 'Traffic Divert Support', taskType: 'TRAFFIC_CONTROL', status: 'PENDING_APPROVAL', serviceArea: 'MG Road', priority: 'MEDIUM', requiredVolunteers: 2, description: 'Assist police traffic cordon at MG Road junction.' },
+        { id: 'vt-2', title: 'First Aid Triage Post', taskType: 'FIRST_AID', status: 'APPROVED', serviceArea: 'Brigade Road', priority: 'HIGH', requiredVolunteers: 3, description: 'Distribute medical kits and guide non-critical walking wounded.' }
+      ];
+    }
+
+    // 20. Disaster Events & Relief Centers
+    if (endpoint === '/disaster/events') {
+      return store.disasterEvents || [
+        { id: 'dis-1', title: 'Urban Flash Flood Warning', disasterType: 'FLOOD', severityLevel: 'HIGH', status: 'ACTIVE', affectedDistrict: 'Central Metro', estimatedAffectedPopulation: 5000, description: 'Low lying road inundated with water logging.' }
+      ];
+    }
+
+    if (endpoint === '/disaster/centers') {
+      return store.shelters.map(s => ({
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        capacity: s.totalCapacity,
+        currentOccupancy: s.occupiedCapacity,
+        status: s.status,
+        contactPerson: 'Disaster Shelter In-Charge',
+        contactPhone: s.contactPhone
+      }));
+    }
+
+    // 21. Emergency Inventory
+    if (endpoint === '/inventory/items') {
+      return store.inventoryItems || [
+        { id: 'inv-1', itemName: 'Oxygen Cylinders (10L)', itemCode: 'MED-OXY-10L', category: 'MEDICAL_EQUIPMENT', currentStock: 45, minimumStockThreshold: 15, unitOfMeasure: 'Cylinders', location: 'Central Warehouse Zone 1' },
+        { id: 'inv-2', itemName: 'Advanced Trauma First Aid Kits', itemCode: 'MED-FAK-01', category: 'FIRST_AID', currentStock: 120, minimumStockThreshold: 30, unitOfMeasure: 'Kits', location: 'Base EMS Depot' },
+        { id: 'inv-3', itemName: 'Packaged Drinking Water (20L Cans)', itemCode: 'REL-WTR-20L', category: 'WATER', currentStock: 80, minimumStockThreshold: 100, unitOfMeasure: 'Cans', location: 'Relief Depot West' }
+      ];
+    }
+
+    if (endpoint === '/inventory/low-stock') {
+      const items = store.inventoryItems || [
+        { id: 'inv-3', itemName: 'Packaged Drinking Water (20L Cans)', itemCode: 'REL-WTR-20L', category: 'WATER', currentStock: 80, minimumStockThreshold: 100, unitOfMeasure: 'Cans', location: 'Relief Depot West' }
+      ];
+      return items.filter(i => i.currentStock <= i.minimumStockThreshold);
+    }
+
+    // 22. Geo Zones & Geo-fencing
+    if (endpoint === '/geofence/zones') {
+      return store.geoZones || [
+        { id: 'gz-1', zoneName: 'MG Road Underpass Flood Zone', zoneType: 'DANGER_ZONE', centerLatitude: 12.9716, centerLongitude: 77.5946, radiusMeters: 500, active: true, advisoryNotice: 'Extreme water accumulation; traffic diverted.' },
+        { id: 'gz-2', zoneName: 'Victoria Hospital Safe Corridor', zoneType: 'SAFE_HAVEN', centerLatitude: 12.9786, centerLongitude: 77.5866, radiusMeters: 800, active: true, advisoryNotice: 'Ambulance green channel active.' }
+      ];
+    }
+
+    // 23. Incident Specific Chat Room
+    if (endpoint.startsWith('/incident-chat/')) {
+      const parts = endpoint.split('/');
+      const emgId = parts[2];
+      if (!store.incidentChats) store.incidentChats = {};
+      if (!store.incidentChats[emgId]) {
+        store.incidentChats[emgId] = [
+          { id: 'msg-1', incidentId: emgId, senderName: 'Officer Ananya Sharma', senderRole: 'DISPATCHER', senderAgency: 'Command Center', message: 'Tactical channel established for incident. Responders check in.', priority: 'NORMAL', createdAt: new Date(Date.now() - 300000).toISOString() },
+          { id: 'msg-2', incidentId: emgId, senderName: 'Rajesh Kumar', senderRole: 'AMBULANCE', senderAgency: 'Trauma EMS', message: 'AMB-104 en-route. Distance 1.8km, ETA 4 mins.', priority: 'URGENT', createdAt: new Date(Date.now() - 120000).toISOString() }
+        ];
+      }
+
+      if (options.method === 'POST') {
+        const body = JSON.parse(options.body || '{}');
+        const auth = this.getAuth();
+        const newMsg = {
+          id: 'msg_' + Date.now(),
+          incidentId: emgId,
+          senderName: auth.fullName || 'Tactical Operator',
+          senderRole: auth.role || 'DISPATCHER',
+          senderAgency: body.senderAgency || 'Tactical Dispatch',
+          message: body.message,
+          priority: body.priority || 'NORMAL',
+          createdAt: new Date().toISOString()
+        };
+        store.incidentChats[emgId].push(newMsg);
+        this.saveLocalStore(store);
+        return newMsg;
+      }
+
+      return store.incidentChats[emgId];
+    }
+
+    // 24. Blood Donor Coordination
+    if (endpoint.includes('/blood-coordination/search-donors')) {
+      return store.bloodDonors || [
+        { id: 'bd-1', donorName: 'R*** S***', bloodGroup: 'O_POSITIVE', city: 'Metro City', latitude: 12.9716, longitude: 77.5946, totalDonations: 4, availableForEmergency: true, verifiedStatus: true },
+        { id: 'bd-2', donorName: 'A*** K***', bloodGroup: 'AB_NEGATIVE', city: 'Metro City', latitude: 12.9750, longitude: 77.5990, totalDonations: 2, availableForEmergency: true, verifiedStatus: true }
+      ];
+    }
+
+    // 25. Vehicle Records & Maintenance
+    if (endpoint === '/vehicles') {
+      return store.vehicleRecords || [
+        { id: 'veh-1', registrationNumber: 'KA-01-EA-1040', vehicleType: 'AMBULANCE', makeModel: 'Force Traveller ALS', serviceStatus: 'ACTIVE', fuelLevelPercentage: 85, driverName: 'Rajesh Kumar', operationalReadinessRating: 'READY' },
+        { id: 'veh-2', registrationNumber: 'KA-01-EA-1055', vehicleType: 'AMBULANCE', makeModel: 'Tata Winger BLS', serviceStatus: 'MAINTENANCE', fuelLevelPercentage: 40, driverName: 'Sunil Gowda', operationalReadinessRating: 'MAINTENANCE_REQUIRED' },
+        { id: 'veh-3', registrationNumber: 'KA-01-PF-3010', vehicleType: 'FIRE_ENGINE', makeModel: 'Ashok Leyland Water Bowser', serviceStatus: 'ACTIVE', fuelLevelPercentage: 92, driverName: 'Officer Jadhav', operationalReadinessRating: 'READY' }
+      ];
+    }
+
+    // 26. In-App Notifications
+    if (endpoint === '/notifications') {
+      return store.notifications || [
+        { id: 'notif-1', title: 'High Priority Incident', message: 'Critical trauma accident reported at MG Road Junction.', category: 'EMERGENCY_ALERT', read: false, createdAt: new Date(Date.now() - 180000).toISOString() },
+        { id: 'notif-2', title: 'Low Stock Alert', message: 'Drinking water inventory below safety threshold in West depot.', category: 'RESOURCE_ALERT', read: false, createdAt: new Date(Date.now() - 600000).toISOString() }
+      ];
+    }
+
+    if (endpoint === '/notifications/unread-count') {
+      const notifs = store.notifications || [];
+      return { unreadCount: notifs.filter(n => !n.read).length || 2 };
+    }
+
+    // 27. Advanced Admin Overview & User Management
+    if (endpoint === '/admin/overview') {
+      return {
+        totalUsers: 142,
+        activeResponders: store.responders.length,
+        totalHospitals: store.hospitals.length,
+        totalBloodBanks: store.bloodBanks.length,
+        totalVolunteers: 48,
+        activeEmergencies: store.emergencies.filter(e => e.status !== 'RESOLVED').length,
+        systemHealth: '100% OPERATIONAL',
+        databaseEngine: 'MongoDB 2dsphere Geospatial',
+        backendEngine: 'Java 21 Spring Boot + Python NLP Microservice',
+        auditLogsCount: 524
+      };
+    }
+
+    if (endpoint === '/admin/users') {
+      return [
+        { id: 'u-1', fullName: 'Officer Ananya Sharma', email: 'command@jeevansetu.gov.in', role: 'CONTROL_CENTER', active: true, agency: 'Tactical Command' },
+        { id: 'u-2', fullName: 'Dr. Vikram Seth', email: 'admin@jeevansetu.gov.in', role: 'ADMIN', active: true, agency: 'System Administration' },
+        { id: 'u-3', fullName: 'Rajesh Kumar', email: 'ambulance@jeevansetu.gov.in', role: 'AMBULANCE', active: true, agency: 'National Ambulance Service' },
+        { id: 'u-4', fullName: 'Dr. Sunita Rao', email: 'hospital@jeevansetu.gov.in', role: 'HOSPITAL', active: true, agency: 'Victoria Trauma ER' },
+        { id: 'u-5', fullName: 'Aarav Patel', email: 'citizen@jeevansetu.in', role: 'CITIZEN', active: true, agency: 'Public Citizen' }
+      ];
+    }
+
+    if (endpoint === '/admin/system-config') {
+      return {
+        criticalEscalationMinutes: 5,
+        highEscalationMinutes: 10,
+        mediumEscalationMinutes: 20,
+        lowEscalationMinutes: 45,
+        duplicateDistanceKm: 0.5,
+        duplicateTimeMinutes: 30,
+        geoFenceAlertEnabled: true,
+        aiNlpConfidenceThreshold: 0.70
+      };
+    }
+
+    // 28. Analytics Reports Summary & CSV
+    if (endpoint === '/analytics/reports/summary') {
+      return {
+        totalEmergenciesLogged: store.emergencies.length,
+        resolvedRate: '88.5%',
+        averageResponseTimeMinutes: 6.8,
+        averageDispatchTimeMinutes: 1.4,
+        criticalCasesHandled: store.emergencies.filter(e => e.priority === 'CRITICAL').length,
+        busiestDistrict: 'Central Metro Corridor',
+        systemUptime: '99.98%'
+      };
+    }
+
+    if (endpoint === '/analytics/export/csv') {
+      return 'IncidentCode,Type,Priority,Status,Address,CreatedAt\n' +
+        store.emergencies.map(e => `${e.incidentCode},${e.type},${e.priority},${e.status},"${e.address}",${e.createdAt}`).join('\n');
+    }
+
     return {};
   },
 

@@ -132,4 +132,11 @@ public class Hospital {
     public int getAvailableVentilators() {
         return Math.max(0, ventilators - occupiedVentilators);
     }
+
+    public void setContactPhone(String phone) { this.emergencyContact = phone; }
+    public void setTotalBeds(int beds) { this.emergencyBeds = beds; }
+    public void setAvailableEmergencyBeds(int beds) { this.emergencyBeds = beds + this.occupiedEmergencyBeds; }
+    public void setAvailableIcuBeds(int beds) { this.icuBeds = beds + this.occupiedIcuBeds; }
+    public void setAvailableVentilators(int vents) { this.ventilators = vents + this.occupiedVentilators; }
+    public void setOxygenStockLevel(int level) {}
 }

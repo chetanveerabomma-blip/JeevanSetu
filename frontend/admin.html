@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Administrator Console — JeevanSetu Platform Governance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body class="bg-[#080d1a] text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-[#060a14] px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-red-600 flex items-center justify-center text-white text-base shadow-lg shadow-red-600/20">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <span class="text-xl font-black tracking-wider text-white">JEEVAN<span class="text-red-500">SETU</span></span>
+      </a>
+      <span class="text-xs font-bold text-amber-400 border-l border-slate-700 pl-3 uppercase tracking-wider">ADMIN CONSOLE</span>
+      <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-[10px] font-bold text-emerald-400">
+        <span class="pulse-dot"></span>
+        <span>GOVERNANCE ACTIVE</span>
+      </div>
+    </div>
+
+    <!-- Quick portal switcher -->
+    <div class="hidden xl:flex items-center space-x-4 text-xs font-semibold text-slate-400">
+      <a href="command-center.html" class="hover:text-cyan-400 transition flex items-center gap-1.5"><i class="fa-solid fa-satellite-dish"></i> Command Center</a>
+      <a href="responder.html" class="hover:text-blue-400 transition flex items-center gap-1.5"><i class="fa-solid fa-truck-medical"></i> Responders</a>
+      <a href="hospital.html" class="hover:text-emerald-400 transition flex items-center gap-1.5"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+      <a href="bloodbank.html" class="hover:text-red-400 transition flex items-center gap-1.5"><i class="fa-solid fa-droplet"></i> Blood Logistics</a>
+      <a href="volunteer-shelter.html" class="hover:text-amber-400 transition flex items-center gap-1.5"><i class="fa-solid fa-hand-holding-heart"></i> Volunteers</a>
+      <a href="analytics.html" class="hover:text-purple-400 transition flex items-center gap-1.5"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <!-- Language Switcher -->
+      <select onchange="window.setLanguage && window.setLanguage(this.value)" class="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-slate-700 outline-none">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+      </select>
+      <div class="text-right hidden md:block">
+        <div class="text-xs font-bold text-white mono" id="admin-name">Dr. Vikram Seth</div>
+        <div class="text-[10px] text-amber-400">System Administrator</div>
+      </div>
+      <button onclick="refreshAll()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs" title="Refresh Live Data">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+      <button onclick="API.logout()" class="p-2 rounded-lg bg-slate-800 hover:bg-red-950/60 border border-slate-700 hover:border-red-500/50 text-red-400 text-xs" title="Sign Out">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Top Metrics Bar -->
+  <div class="bg-[#0b1020] border-b border-slate-800/80 px-6 py-3 grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
+    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-slate-400">Active Emergencies</div>
+        <div class="text-lg font-black text-white mono" id="metric-active-emergencies">--</div>
+      </div>
+      <div class="w-8 h-8 rounded-lg bg-red-950/80 border border-red-500/30 flex items-center justify-center text-red-400 text-sm">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+    </div>
+
+    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-slate-400">Responders Ready</div>
+        <div class="text-lg font-black text-white mono" id="metric-avail-responders">--</div>
+      </div>
+      <div class="w-8 h-8 rounded-lg bg-blue-950/80 border border-blue-500/30 flex items-center justify-center text-blue-400 text-sm">
+        <i class="fa-solid fa-truck-medical"></i>
+      </div>
+    </div>
+
+    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-slate-400">Relief Shelters</div>
+        <div class="text-lg font-black text-white mono" id="metric-relief-centers">--</div>
+      </div>
+      <div class="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-sm">
+        <i class="fa-solid fa-person-shelter"></i>
+      </div>
+    </div>
+
+    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-slate-400">Inventory Items</div>
+        <div class="text-lg font-black text-white mono" id="metric-inventory-count">--</div>
+      </div>
+      <div class="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-sm">
+        <i class="fa-solid fa-boxes-stacked"></i>
+      </div>
+    </div>
+
+    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-slate-400">Active Fleet</div>
+        <div class="text-lg font-black text-white mono" id="metric-active-vehicles">--</div>
+      </div>
+      <div class="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-sm">
+        <i class="fa-solid fa-car-on"></i>
+      </div>
+    </div>
+
+    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-slate-400">Volunteers / Donors</div>
+        <div class="text-lg font-black text-white mono" id="metric-volunteers-donors">--</div>
+      </div>
+      <div class="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-500/30 flex items-center justify-center text-amber-400 text-sm">
+        <i class="fa-solid fa-hand-holding-medical"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tab Bar -->
+  <div class="border-b border-slate-800 bg-[#090e1c] px-6 flex items-center gap-2 overflow-x-auto text-xs font-bold scrollbar-none">
+    <button onclick="switchTab('tab-incidents')" id="btn-tab-incidents" class="tab-btn active px-4 py-3 border-b-2 border-red-500 text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-satellite-dish text-red-400"></i>
+      <span>Incident Command & Escalation</span>
+    </button>
+    <button onclick="switchTab('tab-disasters')" id="btn-tab-disasters" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-house-flood-water text-emerald-400"></i>
+      <span>Disaster Management</span>
+    </button>
+    <button onclick="switchTab('tab-inventory')" id="btn-tab-inventory" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-boxes-stacked text-indigo-400"></i>
+      <span>Emergency Inventory</span>
+    </button>
+    <button onclick="switchTab('tab-vehicles')" id="btn-tab-vehicles" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-truck-medical text-cyan-400"></i>
+      <span>Fleet & Vehicle Maintenance</span>
+    </button>
+    <button onclick="switchTab('tab-volunteers')" id="btn-tab-volunteers" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-handshake-angle text-amber-400"></i>
+      <span>Volunteer Coordination</span>
+    </button>
+    <button onclick="switchTab('tab-blood')" id="btn-tab-blood" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-droplet text-red-400"></i>
+      <span>Blood Donors & Requests</span>
+    </button>
+    <button onclick="switchTab('tab-geozones')" id="btn-tab-geozones" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-map-location-dot text-sky-400"></i>
+      <span>Geo-Fencing & Zones</span>
+    </button>
+    <button onclick="switchTab('tab-users')" id="btn-tab-users" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-users-gear text-purple-400"></i>
+      <span>User Accounts & RBAC</span>
+    </button>
+    <button onclick="switchTab('tab-audit')" id="btn-tab-audit" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-white flex items-center gap-2 transition">
+      <i class="fa-solid fa-clipboard-list text-slate-400"></i>
+      <span>Audit Trail & Reports</span>
+    </button>
+  </div>
+
+  <!-- Tab Contents -->
+  <main class="flex-1 p-6 overflow-y-auto">
+
+    <!-- 1. INCIDENT COMMAND & ESCALATION -->
+    <section id="tab-incidents" class="tab-content space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-slate-300 uppercase">Filters:</span>
+          <select id="filter-incident-priority" onchange="loadIncidents()" class="bg-slate-800 text-xs rounded-lg px-3 py-1.5 border border-slate-700 text-slate-200">
+            <option value="">All Priorities</option>
+            <option value="CRITICAL">Critical Only</option>
+            <option value="HIGH">High Priority</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+          <select id="filter-incident-status" onchange="loadIncidents()" class="bg-slate-800 text-xs rounded-lg px-3 py-1.5 border border-slate-700 text-slate-200">
+            <option value="">All Statuses</option>
+            <option value="REPORTED">Reported / Unassigned</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="EN_ROUTE">En Route</option>
+            <option value="RESOLVED">Resolved</option>
+          </select>
+          <select id="filter-incident-escalated" onchange="loadIncidents()" class="bg-slate-800 text-xs rounded-lg px-3 py-1.5 border border-slate-700 text-slate-200">
+            <option value="">Escalation: All</option>
+            <option value="true">Overdue / Escalated Only</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="command-center.html" class="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+            <i class="fa-solid fa-satellite-dish"></i> Open Tactical Map Grid
+          </a>
+        </div>
+      </div>
+
+      <!-- Incident Table -->
+      <div class="bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3.5">Code</th>
+                <th class="p-3.5">Priority</th>
+                <th class="p-3.5">Type & Description</th>
+                <th class="p-3.5">Location</th>
+                <th class="p-3.5">Assigned Agency</th>
+                <th class="p-3.5">Escalation Status</th>
+                <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="incidents-table-body" class="divide-y divide-slate-800/60 font-medium">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. DISASTER MANAGEMENT -->
+    <section id="tab-disasters" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-house-flood-water text-emerald-400"></i>
+            <span>Active Disaster Relief Events & Affected Regions</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Manage large-scale civil emergencies, temporary relief camps, and emergency supply requests.</p>
+        </div>
+        <button onclick="openModal('modal-create-disaster')" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Declare Disaster Event
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Disaster Events List -->
+        <div class="lg:col-span-2 space-y-3" id="disaster-events-container">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Relief Centers & Capacity -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-person-shelter text-emerald-400"></i>
+              <span>Relief Camps & Shelter Capacity</span>
+            </h3>
+            <button onclick="openModal('modal-add-center')" class="text-[11px] text-emerald-400 hover:underline font-bold">+ Add Camp</button>
+          </div>
+          <div id="relief-centers-container" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. EMERGENCY INVENTORY -->
+    <section id="tab-inventory" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-boxes-stacked text-indigo-400"></i>
+            <span>Centralized Emergency Resource & Medical Inventory</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Track critical emergency supplies, oxygen cylinders, defibrillators, ration packs, and low-stock thresholds.</p>
+        </div>
+        <button onclick="openModal('modal-add-inventory')" class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Add Inventory Item
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs mb-2">
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-semibold uppercase text-[10px]">Total Stock Quantity</span>
+          <span class="font-bold text-white text-base mono" id="inv-total-stock">--</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-semibold uppercase text-[10px]">Available Units</span>
+          <span class="font-bold text-emerald-400 text-base mono" id="inv-avail-stock">--</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-semibold uppercase text-[10px]">Allocated In Field</span>
+          <span class="font-bold text-amber-400 text-base mono" id="inv-alloc-stock">--</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-semibold uppercase text-[10px]">Low Stock Warnings</span>
+          <span class="font-bold text-red-400 text-base mono" id="inv-low-alerts">--</span>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">Code</th>
+              <th class="p-3.5">Item Name</th>
+              <th class="p-3.5">Category</th>
+              <th class="p-3.5">Location / Depot</th>
+              <th class="p-3.5">Available / Total</th>
+              <th class="p-3.5">Threshold</th>
+              <th class="p-3.5">Condition</th>
+              <th class="p-3.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table-body" class="divide-y divide-slate-800/60 font-medium">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. FLEET & VEHICLE MAINTENANCE -->
+    <section id="tab-vehicles" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-truck-medical text-cyan-400"></i>
+            <span>Fleet Telemetry, Vehicle Condition & Maintenance</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Manage ambulances, fire tenders, police interceptors; enforce maintenance exclusion from dispatch algorithms.</p>
+        </div>
+        <button onclick="openModal('modal-add-vehicle')" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Register Vehicle
+        </button>
+      </div>
+
+      <div class="bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">Plate Number</th>
+              <th class="p-3.5">Category & Unit</th>
+              <th class="p-3.5">Make / Model</th>
+              <th class="p-3.5">Odometer</th>
+              <th class="p-3.5">Maintenance Status</th>
+              <th class="p-3.5">Assigned Station / Pilot</th>
+              <th class="p-3.5">Next Service</th>
+              <th class="p-3.5 text-right">Manage</th>
+            </tr>
+          </thead>
+          <tbody id="vehicles-table-body" class="divide-y divide-slate-800/60 font-medium">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. VOLUNTEER COORDINATION -->
+    <section id="tab-volunteers" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-handshake-angle text-amber-400"></i>
+            <span>Volunteer Corps Coordination & Task Management</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Assign community volunteers to field relief, logistics, medical aid, and crowd coordination.</p>
+        </div>
+        <button onclick="openModal('modal-create-vol-task')" class="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Create Volunteer Request
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Volunteer Roster -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Registered Volunteers (Protected Data)</h3>
+            <span class="text-[11px] text-slate-400" id="vol-count-badge">--</span>
+          </div>
+          <div id="volunteers-list-container" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Task Queue -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Volunteer Tasks & Assignments</h3>
+            <span class="text-[11px] text-amber-400" id="task-count-badge">--</span>
+          </div>
+          <div id="volunteer-tasks-container" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. BLOOD DONORS & COORDINATION -->
+    <section id="tab-blood" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-droplet text-red-500"></i>
+            <span>Voluntary Blood Donor Network & Hospital Requests</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Discover donors by blood group with privacy protection; fulfill hospital emergency blood requisitions.</p>
+        </div>
+        <button onclick="openModal('modal-create-blood-req')" class="px-3.5 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Broadcast Blood Request
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Hospital Requests -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Active Hospital Blood Requisitions</h3>
+            <span class="text-[11px] text-red-400">Urgent</span>
+          </div>
+          <div id="blood-requests-container" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Donor Discovery -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Search Matching Donors</h3>
+            <div class="flex items-center gap-1.5">
+              <select id="search-blood-group" onchange="searchDonors()" class="bg-slate-800 text-xs rounded px-2 py-1 text-white border border-slate-700">
+                <option value="O-">O- Negative</option>
+                <option value="O+">O+ Positive</option>
+                <option value="A+">A+ Positive</option>
+                <option value="A-">A- Negative</option>
+                <option value="B+">B+ Positive</option>
+                <option value="B-">B- Negative</option>
+                <option value="AB+">AB+ Positive</option>
+                <option value="AB-">AB- Negative</option>
+              </select>
+            </div>
+          </div>
+          <div id="blood-donors-container" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. GEO-FENCING & ZONES -->
+    <section id="tab-geozones" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-map-location-dot text-sky-400"></i>
+            <span>Emergency Geo-Fencing & Evacuation Zones</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Establish exclusion zones, danger zones, and calculate all hospital, ambulance, and camp resources inside.</p>
+        </div>
+        <button onclick="openModal('modal-create-geozone')" class="px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Define Emergency Geo-Zone
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Zones List -->
+        <div class="space-y-3" id="geozones-container">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Zone Map Preview -->
+        <div class="lg:col-span-2 bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden h-[450px]" id="geozone-map">
+          <!-- Leaflet Map mounts here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. USER ACCOUNTS & RBAC -->
+    <section id="tab-users" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-users-gear text-purple-400"></i>
+            <span>Role-Based Access Control (RBAC) & User Management</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Admin, Dispatcher, Citizen, Ambulance, Hospital, Police, Fire, Volunteer, Relief Manager accounts.</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">User</th>
+              <th class="p-3.5">Email</th>
+              <th class="p-3.5">Phone</th>
+              <th class="p-3.5">Current Role</th>
+              <th class="p-3.5">Organization</th>
+              <th class="p-3.5 text-right">Change Role</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body" class="divide-y divide-slate-800/60 font-medium">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 9. AUDIT TRAIL & REPORTS -->
+    <section id="tab-audit" class="tab-content hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-list text-slate-400"></i>
+            <span>System Audit Trail & Cryptographic Verification Logs</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Immutable audit trail of operator decisions, dispatch acknowledgements, status changes, and exports.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a id="btn-export-csv" href="/api/analytics/export/csv" download="jeevansetu_incidents.csv" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-csv text-emerald-400"></i> Export CSV
+          </a>
+          <button onclick="downloadExecutiveReport()" class="px-3.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white transition flex items-center gap-1.5">
+            <i class="fa-solid fa-file-pdf"></i> Executive Summary
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+        <div id="audit-logs-container" class="space-y-2 max-h-[500px] overflow-y-auto font-mono text-xs text-slate-300">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS -->
+
+  <!-- Modal: Assign Agency & Remark -->
+  <div id="modal-assign-agency" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-building-shield text-blue-400"></i>
+          <span>Assign Incident Agency & Remarks</span>
+        </h3>
+        <button onclick="closeModal('modal-assign-agency')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="hidden" id="modal-agency-inc-id">
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Responsible Agency</label>
+        <select id="modal-agency-select" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+          <option value="POLICE">Metro Police Quick Response</option>
+          <option value="FIRE_RESCUE">Fire & Heavy Rescue Command</option>
+          <option value="AMBULANCE">Emergency Medical Services (EMS)</option>
+          <option value="NDRF">National Disaster Response Force (NDRF)</option>
+          <option value="HOSPITAL">Level-1 Trauma Center</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Dispatcher Remarks</label>
+        <textarea id="modal-agency-remarks" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-white placeholder-slate-500" placeholder="Operational briefing notes..."></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeModal('modal-assign-agency')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold">Cancel</button>
+        <button onclick="submitAgencyAssignment()" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold">Assign Agency</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Declare Disaster Event -->
+  <div id="modal-create-disaster" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-emerald-400"></i>
+          <span>Declare Large-Scale Disaster Event</span>
+        </h3>
+        <button onclick="closeModal('modal-create-disaster')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Event Title</label>
+          <input type="text" id="disaster-title" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" placeholder="e.g. Cyclone Coastal Warning / Urban Flood Basin">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Disaster Type</label>
+            <select id="disaster-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+              <option value="FLOOD">Flood</option>
+              <option value="FIRE">Fire</option>
+              <option value="CYCLONE">Cyclone</option>
+              <option value="EARTHQUAKE">Earthquake</option>
+              <option value="LANDSLIDE">Landslide</option>
+              <option value="CHEMICAL_SPILL">Chemical Spill</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Severity</label>
+            <select id="disaster-severity" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+              <option value="SEVERE">Severe</option>
+              <option value="CATASTROPHIC">Catastrophic</option>
+              <option value="WARNING">Warning</option>
+              <option value="ADVISORY">Advisory</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Affected Region Description</label>
+          <textarea id="disaster-desc" rows="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" placeholder="Details of affected sector..."></textarea>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Center Lat</label>
+            <input type="number" step="0.0001" id="disaster-lat" value="12.9600" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Center Lng</label>
+            <input type="number" step="0.0001" id="disaster-lng" value="77.5800" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Radius (km)</label>
+            <input type="number" step="0.5" id="disaster-radius" value="5.0" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeModal('modal-create-disaster')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancel</button>
+        <button onclick="submitDisasterEvent()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">Register Disaster</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Inventory Item -->
+  <div id="modal-add-inventory" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked text-indigo-400"></i>
+          <span>Add Emergency Resource Inventory</span>
+        </h3>
+        <button onclick="closeModal('modal-add-inventory')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Item Name</label>
+          <input type="text" id="inv-name" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" placeholder="e.g. Oxygen Cylinder 47L / Trauma First Aid Kit">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Category</label>
+            <select id="inv-cat" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+              <option value="OXYGEN_CYLINDER">Oxygen Cylinder</option>
+              <option value="FIRST_AID_KIT">First Aid Kit</option>
+              <option value="MEDICAL_EQUIPMENT">Medical Equipment</option>
+              <option value="DRINKING_WATER">Drinking Water</option>
+              <option value="FOOD_SUPPLY">Food Supply</option>
+              <option value="FIRE_SAFETY">Fire Safety</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Depot / Location</label>
+            <input type="text" id="inv-loc" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" placeholder="Victoria Central Bay">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Initial Quantity</label>
+            <input type="number" id="inv-qty" value="50" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Low-Stock Alert Threshold</label>
+            <input type="number" id="inv-threshold" value="10" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeModal('modal-add-inventory')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">Cancel</button>
+        <button onclick="submitInventoryItem()" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Add Item</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/websocket.js"></script>
+  <script src="js/offline-sync.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script>
+    let currentTab = 'tab-incidents';
+    let geoMap = null;
+    let zoneMarkers = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await refreshAll();
+      initGeoZoneMap();
+    });
+
+    async function refreshAll() {
+      await loadAdminOverview();
+      await loadIncidents();
+      await loadDisasters();
+      await loadInventory();
+      await loadVehicles();
+      await loadVolunteers();
+      await loadBloodData();
+      await loadGeoZones();
+      await loadUsers();
+      await loadAuditLogs();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-red-500', 'text-white', 'active');
+        btn.classList.add('border-transparent', 'text-slate-400');
+      });
+
+      const target = document.getElementById(tabId);
+      if (target) target.classList.remove('hidden');
+
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        activeBtn.classList.add('border-red-500', 'text-white', 'active');
+      }
+
+      currentTab = tabId;
+      if (tabId === 'tab-geozones' && geoMap) {
+        setTimeout(() => geoMap.invalidateSize(), 200);
+      }
+    }
+
+    // 1. Overview KPIs
+    async function loadAdminOverview() {
+      try {
+        const res = await API.request('/admin/overview');
+        if (res) {
+          document.getElementById('metric-active-emergencies').innerText = res.activeEmergencies ?? 0;
+          document.getElementById('metric-avail-responders').innerText = `${res.availableResponders ?? 0} / ${res.totalResponders ?? 0}`;
+          document.getElementById('metric-relief-centers').innerText = res.activeDisasters ? `${res.activeDisasters} active` : '0';
+          document.getElementById('metric-inventory-count').innerText = res.totalInventoryItems ?? 0;
+          document.getElementById('metric-active-vehicles').innerText = `${res.activeVehicles ?? 0} / ${res.totalVehicles ?? 0}`;
+          document.getElementById('metric-volunteers-donors').innerText = `${res.totalVolunteers ?? 0} / ${res.totalBloodDonors ?? 0}`;
+        }
+      } catch (err) {
+        console.error('Error loading admin overview:', err);
+      }
+    }
+
+    // 2. Incident Command
+    async function loadIncidents() {
+      const priority = document.getElementById('filter-incident-priority')?.value || '';
+      const status = document.getElementById('filter-incident-status')?.value || '';
+      const escalated = document.getElementById('filter-incident-escalated')?.value || '';
+
+      let query = `/command/incidents?`;
+      if (priority) query += `priority=${priority}&`;
+      if (status) query += `status=${status}&`;
+      if (escalated) query += `escalated=${escalated}&`;
+
+      try {
+        const list = await API.request(query);
+        const tbody = document.getElementById('incidents-table-body');
+        if (!tbody) return;
+
+        if (!list || list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">No emergency incidents found matching filters.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = list.map(e => {
+          const isCrit = e.priority === 'CRITICAL';
+          const badgeClass = isCrit ? 'bg-red-950 text-red-400 border-red-500/40' :
+                             e.priority === 'HIGH' ? 'bg-orange-950 text-orange-400 border-orange-500/40' :
+                             'bg-blue-950 text-blue-400 border-blue-500/40';
+
+          const escBadge = e.escalated ?
+            `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 border border-red-500 text-red-400 animate-pulse">LEVEL ${e.escalationLevel || 1} OVERDUE</span>` :
+            `<span class="text-slate-500 text-[10px]">Normal Queue</span>`;
+
+          return `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-3.5 font-mono text-white font-bold">${e.incidentCode}</td>
+              <td class="p-3.5">
+                <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${badgeClass}">${e.priority}</span>
+              </td>
+              <td class="p-3.5">
+                <div class="text-white font-bold">${e.type}</div>
+                <div class="text-[11px] text-slate-400 truncate max-w-xs">${e.description}</div>
+              </td>
+              <td class="p-3.5 text-slate-300 text-[11px]">${e.address || 'GPS Coordinates'}</td>
+              <td class="p-3.5">
+                <span class="font-bold ${e.assignedAgency ? 'text-blue-400' : 'text-slate-500 italic'}">${e.assignedAgency || 'Unassigned'}</span>
+              </td>
+              <td class="p-3.5">${escBadge}</td>
+              <td class="p-3.5 font-bold text-sky-400">${e.status}</td>
+              <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+                <button onclick="openAssignAgencyModal('${e.id}')" class="p-1.5 rounded bg-blue-950 hover:bg-blue-900 border border-blue-800 text-blue-300" title="Assign Agency">
+                  <i class="fa-solid fa-building-shield"></i>
+                </button>
+                ${e.escalated && !e.escalationAcknowledged ? `
+                  <button onclick="acknowledgeEscalation('${e.id}')" class="p-1.5 rounded bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300" title="Acknowledge Escalation">
+                    <i class="fa-solid fa-check"></i>
+                  </button>
+                ` : ''}
+                ${e.status !== 'RESOLVED' ? `
+                  <button onclick="resolveIncident('${e.id}')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400" title="Resolve Incident">
+                    <i class="fa-solid fa-circle-check"></i>
+                  </button>
+                ` : ''}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error loading incidents:', err);
+      }
+    }
+
+    function openAssignAgencyModal(incId) {
+      document.getElementById('modal-agency-inc-id').value = incId;
+      openModal('modal-assign-agency');
+    }
+
+    async function submitAgencyAssignment() {
+      const incId = document.getElementById('modal-agency-inc-id').value;
+      const agency = document.getElementById('modal-agency-select').value;
+      const remarks = document.getElementById('modal-agency-remarks').value;
+
+      try {
+        await API.request(`/command/incident/${incId}/assign-agency`, {
+          method: 'POST',
+          body: JSON.stringify({ agency, remarks, dispatcherName: 'Dr. Vikram Seth (Admin)' })
+        });
+        closeModal('modal-assign-agency');
+        await loadIncidents();
+      } catch (err) {
+        alert('Assignment error: ' + err.message);
+      }
+    }
+
+    async function acknowledgeEscalation(incId) {
+      try {
+        await API.request(`/command/incident/${incId}/acknowledge-escalation`, {
+          method: 'POST',
+          body: JSON.stringify({ dispatcherName: 'Dr. Vikram Seth (Admin)' })
+        });
+        await loadIncidents();
+      } catch (err) {
+        alert('Acknowledge error: ' + err.message);
+      }
+    }
+
+    async function resolveIncident(incId) {
+      if (!confirm('Mark incident as resolved on scene?')) return;
+      try {
+        await API.request(`/command/incident/${incId}/resolve`, {
+          method: 'POST',
+          body: JSON.stringify({ notes: 'Verified resolution by Command Administrator', dispatcherName: 'Admin' })
+        });
+        await loadIncidents();
+      } catch (err) {
+        alert('Resolve error: ' + err.message);
+      }
+    }
+
+    // 3. Disaster Management
+    async function loadDisasters() {
+      try {
+        const events = await API.request('/disaster/events');
+        const cont = document.getElementById('disaster-events-container');
+        if (!cont) return;
+
+        cont.innerHTML = (events || []).map(d => `
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-emerald-400">${d.eventCode}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 border border-red-500/40 text-red-400">${d.severity}</span>
+            </div>
+            <div class="text-sm font-bold text-white">${d.title}</div>
+            <div class="text-xs text-slate-400">${d.description}</div>
+            <div class="flex items-center gap-4 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
+              <span>Displaced: <b>${d.displacedCount || 0}</b></span>
+              <span>Radius: <b>${d.affectedRadiusKm} km</b></span>
+              <span>Status: <b class="text-emerald-400">${d.status}</b></span>
+            </div>
+          </div>
+        `).join('') || '<div class="text-slate-500 text-xs">No active disaster events declared.</div>';
+
+        // Centers
+        const centers = await API.request('/disaster/centers');
+        const cCont = document.getElementById('relief-centers-container');
+        if (cCont) {
+          cCont.innerHTML = (centers || []).map(c => `
+            <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs space-y-1">
+              <div class="font-bold text-white">${c.name}</div>
+              <div class="text-[11px] text-slate-400">${c.address}</div>
+              <div class="flex items-center justify-between text-[11px] pt-1">
+                <span class="text-emerald-400">Occupancy: ${c.currentOccupancy} / ${c.totalCapacity}</span>
+                <span class="text-slate-400">Water: ${c.waterSupplyLiters}L</span>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error loading disasters:', err);
+      }
+    }
+
+    async function submitDisasterEvent() {
+      const title = document.getElementById('disaster-title').value;
+      const disasterType = document.getElementById('disaster-type').value;
+      const severity = document.getElementById('disaster-severity').value;
+      const description = document.getElementById('disaster-desc').value;
+      const centerLatitude = parseFloat(document.getElementById('disaster-lat').value);
+      const centerLongitude = parseFloat(document.getElementById('disaster-lng').value);
+      const affectedRadiusKm = parseFloat(document.getElementById('disaster-radius').value);
+
+      try {
+        await API.request('/disaster/events', {
+          method: 'POST',
+          body: JSON.stringify({ title, disasterType, severity, description, centerLatitude, centerLongitude, affectedRadiusKm })
+        });
+        closeModal('modal-create-disaster');
+        await loadDisasters();
+      } catch (err) {
+        alert('Disaster registration error: ' + err.message);
+      }
+    }
+
+    // 4. Inventory
+    async function loadInventory() {
+      try {
+        const overview = await API.request('/inventory/overview');
+        if (overview) {
+          document.getElementById('inv-total-stock').innerText = overview.totalStock ?? 0;
+          document.getElementById('inv-avail-stock').innerText = overview.availableStock ?? 0;
+          document.getElementById('inv-alloc-stock').innerText = overview.allocatedStock ?? 0;
+          document.getElementById('inv-low-alerts').innerText = overview.lowStockAlerts ?? 0;
+        }
+
+        const items = await API.request('/inventory');
+        const tbody = document.getElementById('inventory-table-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = (items || []).map(i => {
+          const isLow = i.availableQuantity <= i.minStockThreshold;
+          return `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-3.5 font-mono text-white font-bold">${i.itemCode}</td>
+              <td class="p-3.5 font-bold text-white">${i.name}</td>
+              <td class="p-3.5 text-slate-400">${i.category}</td>
+              <td class="p-3.5 text-slate-300">${i.locationName}</td>
+              <td class="p-3.5 font-bold ${isLow ? 'text-red-400' : 'text-emerald-400'}">${i.availableQuantity} / ${i.totalQuantity} ${i.unit}</td>
+              <td class="p-3.5 text-slate-400">${i.minStockThreshold}</td>
+              <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">${i.condition}</span></td>
+              <td class="p-3.5 text-right space-x-1.5">
+                <button onclick="restockItem('${i.id}')" class="px-2 py-1 rounded bg-indigo-950 border border-indigo-700 text-indigo-300 text-[10px] font-bold">+ Restock</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error loading inventory:', err);
+      }
+    }
+
+    async function restockItem(id) {
+      const qty = prompt('Enter quantity to add to stock:', '20');
+      if (!qty || isNaN(qty)) return;
+      try {
+        await API.request(`/inventory/${id}/stock`, {
+          method: 'POST',
+          body: JSON.stringify({ quantityDelta: parseInt(qty), transactionType: 'RESTOCK', notes: 'Admin Restock' })
+        });
+        await loadInventory();
+      } catch (err) {
+        alert('Stock update error: ' + err.message);
+      }
+    }
+
+    async function submitInventoryItem() {
+      const name = document.getElementById('inv-name').value;
+      const category = document.getElementById('inv-cat').value;
+      const locationName = document.getElementById('inv-loc').value;
+      const totalQuantity = parseInt(document.getElementById('inv-qty').value);
+      const minStockThreshold = parseInt(document.getElementById('inv-threshold').value);
+
+      try {
+        await API.request('/inventory', {
+          method: 'POST',
+          body: JSON.stringify({ name, category, locationName, totalQuantity, minStockThreshold })
+        });
+        closeModal('modal-add-inventory');
+        await loadInventory();
+      } catch (err) {
+        alert('Add item error: ' + err.message);
+      }
+    }
+
+    // 5. Vehicles
+    async function loadVehicles() {
+      try {
+        const vehicles = await API.request('/vehicles');
+        const tbody = document.getElementById('vehicles-table-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = (vehicles || []).map(v => `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3.5 font-mono text-white font-bold">${v.vehicleNumber}</td>
+            <td class="p-3.5 font-bold text-cyan-400">${v.category} (${v.vehicleCode})</td>
+            <td class="p-3.5 text-slate-300">${v.makeModel} (${v.year})</td>
+            <td class="p-3.5 font-mono">${v.odometerKm} km</td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${v.maintenanceStatus === 'ACTIVE' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-red-950 text-red-400 border border-red-500/40'}">
+                ${v.maintenanceStatus}
+              </span>
+            </td>
+            <td class="p-3.5 text-slate-400">${v.assignedStationOrHospital} (${v.assignedDriverName || 'Unassigned'})</td>
+            <td class="p-3.5 text-slate-400">${v.nextServiceDate || 'N/A'}</td>
+            <td class="p-3.5 text-right">
+              <button onclick="toggleVehicleStatus('${v.id}', '${v.maintenanceStatus === 'ACTIVE' ? 'MAINTENANCE' : 'ACTIVE'}')" class="px-2 py-1 rounded bg-slate-800 text-[10px] font-bold text-slate-200">
+                ${v.maintenanceStatus === 'ACTIVE' ? 'Set Maintenance' : 'Set Active'}
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading vehicles:', err);
+      }
+    }
+
+    async function toggleVehicleStatus(id, newStatus) {
+      try {
+        await API.request(`/vehicles/${id}/maintenance-status`, {
+          method: 'PUT',
+          body: JSON.stringify({ maintenanceStatus: newStatus, conditionReport: 'Operational Check' })
+        });
+        await loadVehicles();
+      } catch (err) {
+        alert('Vehicle status error: ' + err.message);
+      }
+    }
+
+    // 6. Volunteers
+    async function loadVolunteers() {
+      try {
+        const volunteers = await API.request('/volunteers?maskSensitive=true');
+        const cont = document.getElementById('volunteers-list-container');
+        if (cont) {
+          cont.innerHTML = (volunteers || []).map(v => `
+            <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs flex items-center justify-between">
+              <div>
+                <div class="font-bold text-white">${v.name} <span class="text-amber-400 text-[10px]">(${v.bloodGroup || 'N/A'})</span></div>
+                <div class="text-[11px] text-slate-400">${v.skills?.join(', ') || 'General Volunteer'} • Phone: ${v.phone}</div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${v.availabilityStatus === 'AVAILABLE' ? 'bg-emerald-950 text-emerald-400' : 'bg-amber-950 text-amber-400'}">
+                ${v.availabilityStatus}
+              </span>
+            </div>
+          `).join('');
+        }
+
+        const tasks = await API.request('/volunteers/tasks');
+        const tCont = document.getElementById('volunteer-tasks-container');
+        if (tCont) {
+          tCont.innerHTML = (tasks || []).map(t => `
+            <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-mono font-bold text-white">${t.taskCode}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-400">${t.status}</span>
+              </div>
+              <div class="font-semibold text-slate-200">${t.title}</div>
+              <div class="text-[11px] text-slate-400">${t.locationAddress}</div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error loading volunteers:', err);
+      }
+    }
+
+    // 7. Blood Data
+    async function loadBloodData() {
+      try {
+        const reqs = await API.request('/blood-coordination/requests');
+        const cont = document.getElementById('blood-requests-container');
+        if (cont) {
+          cont.innerHTML = (reqs || []).map(r => `
+            <div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-red-400 font-mono">${r.requestCode} [${r.bloodGroup}]</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-500/30">${r.urgency}</span>
+              </div>
+              <div class="text-white font-bold">${r.hospitalName}</div>
+              <div class="text-slate-400 text-[11px]">Required: ${r.unitsRequired} units | Fulfilled: ${r.unitsFulfilled} units</div>
+            </div>
+          `).join('') || '<div class="text-slate-500 text-xs">No active blood requests.</div>';
+        }
+        await searchDonors();
+      } catch (err) {
+        console.error('Error loading blood data:', err);
+      }
+    }
+
+    async function searchDonors() {
+      const bg = document.getElementById('search-blood-group')?.value || 'O-';
+      try {
+        const donors = await API.request(`/blood-coordination/donors/search?bloodGroup=${encodeURIComponent(bg)}`);
+        const cont = document.getElementById('blood-donors-container');
+        if (cont) {
+          cont.innerHTML = (donors || []).map(d => `
+            <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs flex items-center justify-between">
+              <div>
+                <div class="font-bold text-white">${d.fullName} <span class="text-red-400 font-mono">(${d.bloodGroup})</span></div>
+                <div class="text-[11px] text-slate-400">${d.city} • Verified Donor • Phone: ${d.phone}</div>
+              </div>
+              <span class="text-[10px] text-emerald-400 font-bold">READY</span>
+            </div>
+          `).join('') || '<div class="text-slate-500 text-xs">No donors matching this group nearby.</div>';
+        }
+      } catch (err) {
+        console.error('Donor search error:', err);
+      }
+    }
+
+    // 8. Geo-Zones
+    async function loadGeoZones() {
+      try {
+        const zones = await API.request('/geofence/zones');
+        const cont = document.getElementById('geozones-container');
+        if (cont) {
+          cont.innerHTML = (zones || []).map(z => `
+            <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1.5 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-white">${z.zoneName}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-400 border border-red-500/40">${z.severity}</span>
+              </div>
+              <div class="text-slate-400 text-[11px]">${z.description}</div>
+              <div class="flex items-center justify-between text-[11px] text-slate-300 pt-1">
+                <span>Radius: <b>${z.radiusMeters}m</b></span>
+                <button onclick="scanGeoZone('${z.id}')" class="text-sky-400 hover:underline font-bold">Scan Resources</button>
+              </div>
+            </div>
+          `).join('') || '<div class="text-slate-500 text-xs">No active geo-zones defined.</div>';
+        }
+
+        renderZonesOnMap(zones);
+      } catch (err) {
+        console.error('Error loading geo-zones:', err);
+      }
+    }
+
+    function initGeoZoneMap() {
+      if (document.getElementById('geozone-map') && !geoMap) {
+        geoMap = L.map('geozone-map').setView([12.9650, 77.5850], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(geoMap);
+      }
+    }
+
+    function renderZonesOnMap(zones) {
+      if (!geoMap) return;
+      zoneMarkers.forEach(m => geoMap.removeLayer(m));
+      zoneMarkers = [];
+
+      (zones || []).forEach(z => {
+        const circle = L.circle([z.centerLatitude, z.centerLongitude], {
+          color: z.severity === 'CRITICAL' ? '#ef4444' : '#0284c7',
+          fillColor: z.severity === 'CRITICAL' ? '#ef4444' : '#0284c7',
+          fillOpacity: 0.25,
+          radius: z.radiusMeters
+        }).addTo(geoMap);
+
+        circle.bindPopup(`<b>${z.zoneName}</b><br>${z.description}<br>Radius: ${z.radiusMeters}m`);
+        zoneMarkers.push(circle);
+      });
+    }
+
+    async function scanGeoZone(zoneId) {
+      try {
+        const scan = await API.request(`/geofence/zones/${zoneId}/scan`);
+        alert(`Geo-Zone Scan Result:\n• Responders inside: ${scan.responders?.length || 0}\n• Hospitals inside: ${scan.hospitals?.length || 0}\n• Relief camps inside: ${scan.reliefCenters?.length || 0}\n• Active emergencies: ${scan.activeIncidents?.length || 0}`);
+      } catch (err) {
+        alert('Scan error: ' + err.message);
+      }
+    }
+
+    // 9. Users & RBAC
+    async function loadUsers() {
+      try {
+        const users = await API.request('/admin/users');
+        const tbody = document.getElementById('users-table-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = (users || []).map(u => `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="p-3.5 font-bold text-white">${u.fullName || 'User'}</td>
+            <td class="p-3.5 text-slate-300 font-mono">${u.email}</td>
+            <td class="p-3.5 text-slate-400 font-mono">${u.phone || 'N/A'}</td>
+            <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-purple-950 border border-purple-500/40 text-purple-300 font-bold text-[10px]">${u.role}</span></td>
+            <td class="p-3.5 text-slate-400">${u.organization || 'General Public'}</td>
+            <td class="p-3.5 text-right">
+              <select onchange="updateUserRole('${u.id}', this.value)" class="bg-slate-800 text-[11px] rounded px-2 py-1 text-white border border-slate-700">
+                <option value="CITIZEN" ${u.role === 'CITIZEN' ? 'selected' : ''}>Citizen</option>
+                <option value="DISPATCHER" ${u.role === 'DISPATCHER' ? 'selected' : ''}>Dispatcher</option>
+                <option value="CONTROL_CENTER" ${u.role === 'CONTROL_CENTER' ? 'selected' : ''}>Control Center</option>
+                <option value="AMBULANCE" ${u.role === 'AMBULANCE' ? 'selected' : ''}>Ambulance</option>
+                <option value="HOSPITAL" ${u.role === 'HOSPITAL' ? 'selected' : ''}>Hospital</option>
+                <option value="POLICE" ${u.role === 'POLICE' ? 'selected' : ''}>Police</option>
+                <option value="FIRE" ${u.role === 'FIRE' ? 'selected' : ''}>Fire</option>
+                <option value="VOLUNTEER" ${u.role === 'VOLUNTEER' ? 'selected' : ''}>Volunteer</option>
+                <option value="RELIEF_MANAGER" ${u.role === 'RELIEF_MANAGER' ? 'selected' : ''}>Relief Manager</option>
+                <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
+              </select>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading users:', err);
+      }
+    }
+
+    async function updateUserRole(id, role) {
+      try {
+        await API.request(`/admin/users/${id}/role`, {
+          method: 'PUT',
+          body: JSON.stringify({ role })
+        });
+        await loadUsers();
+      } catch (err) {
+        alert('Role update error: ' + err.message);
+      }
+    }
+
+    // 10. Audit Logs & Reports
+    async function loadAuditLogs() {
+      try {
+        const logs = await API.request('/analytics/audit-logs?limit=50');
+        const cont = document.getElementById('audit-logs-container');
+        if (!cont) return;
+
+        cont.innerHTML = (logs || []).map(l => `
+          <div class="p-2.5 rounded bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
+            <div>
+              <span class="text-amber-400 font-bold">[${l.action || 'LOG'}]</span>
+              <span class="text-white ml-2">${l.details || ''}</span>
+              <span class="text-slate-500 ml-2">by ${l.actorEmail || 'SYSTEM'} (${l.actorRole || 'SYSTEM'})</span>
+            </div>
+            <div class="text-slate-500 font-mono">${new Date(l.timestamp).toLocaleTimeString()}</div>
+          </div>
+        `).join('') || '<div class="text-slate-500 text-xs">No audit logs recorded yet.</div>';
+      } catch (err) {
+        console.error('Error loading audit logs:', err);
+      }
+    }
+
+    async function downloadExecutiveReport() {
+      try {
+        const rep = await API.request('/analytics/reports/summary');
+        alert(`Executive Summary Generated:\n• Total Incidents: ${rep.totalIncidents}\n• Critical Trauma: ${rep.criticalTraumaIncidents}\n• Auto-Escalated: ${rep.autoEscalatedIncidents}\n• System Readiness: ${rep.systemReadinessScore}%\nReport logged for audit governance.`);
+      } catch (err) {
+        alert('Report error: ' + err.message);
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id)?.classList.remove('hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id)?.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

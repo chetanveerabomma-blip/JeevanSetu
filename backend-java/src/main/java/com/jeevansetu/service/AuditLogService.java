@@ -30,6 +30,10 @@ public class AuditLogService {
         auditLogRepository.save(log);
     }
 
+    public void log(String action, String incidentId, String entityType, String details) {
+        logAction("SYSTEM", entityType, action, incidentId, incidentId, details, null, null);
+    }
+
     public List<AuditLog> getRecentLogs(int limit) {
         return auditLogRepository.findAllByOrderByTimestampDesc(PageRequest.of(0, Math.min(100, limit)));
     }

@@ -26,4 +26,9 @@ public interface EmergencyRepository extends MongoRepository<Emergency, String> 
     long countByStatus(EmergencyStatus status);
     long countByPriority(EmergencyPriority priority);
     List<Emergency> findByCreatedAtBetween(Instant start, Instant end);
+    Optional<Emergency> findByClientGeneratedId(String clientGeneratedId);
+    List<Emergency> findByEscalatedTrueAndStatusNotIn(List<EmergencyStatus> statuses);
+    List<Emergency> findByStatusNotIn(List<EmergencyStatus> statuses, Sort sort);
+    List<Emergency> findByAssignedAgency(String assignedAgency, Sort sort);
+    List<Emergency> findByStatusAndCreatedAtBefore(EmergencyStatus status, Instant cutoffTime);
 }

@@ -101,4 +101,11 @@ public class BloodBank {
 
     public Instant getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(Instant lastUpdated) { this.lastUpdated = lastUpdated; }
+
+    public void setStockUnits(String type, int units) {
+        if (this.inventory == null) {
+            this.inventory = new HashMap<>();
+        }
+        this.inventory.put(type, units);
+    }
 }
